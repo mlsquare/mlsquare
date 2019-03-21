@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from keras.wrappers.scikit_learn import KerasRegressor, KerasClassifier
+from ..optmizers import get_best_model
+import pickle
+import onnxmltools
+
+
+class SklearnKerasClassifier(KerasClassifier):
+        def __init__(self, build_fn, **kwargs):
+            super(KerasClassifier, self).__init__(build_fn=build_fn)
+            self.primal = kwargs['primal']
+            self.params = kwargs['params']
+            self.best = kwargs['best']
+
+        def fit(self, x_train, y_train, **kwargs):
+            kwargs.setdefault('params', self.params)
+            kwargs.setdefault('space', False)
+            self.params.update(kwargs['params'])
+            # Check whether to compute for the best model or not
+            if (self.best and (kwargs['params'] != self.params or kwargs['space'])):
+                # Optimize
+                import numpy as np
+
+                hyperopt_space = kwargs['space']
+
+                primal_model = self.primal
+                primal_model.fit(x_train, y_train)
+                y_pred = primal_model.predict(x_train)
+                primal_data = {
+                    'y_pred': y_pred,
+                    'model_name': primal_model.__class__.__name__
+                }
+                y_train = np.array(y_train)
+                if len(y_train.shape) == 2 and y_train.shape[1] > 1:
+                    self.classes_ = np.arange(y_train.shape[1])
+                elif (len(y_train.shape) == 2 and y_train.shape[1] == 1) or len(y_train.shape) == 1:
+                    self.classes_ = np.unique(y_train)
+                    y_train = np.searchsorted(self.classes_, y_train)
+                else:
+                    raise ValueError('Invalid shape for y_train: ' + str(y_train.shape))
+
+                ## Search for best model using Tune ##
+                self.model = get_best_model(x_train, y_train,
+                    primal_data=primal_data, params=self.params, space=hyperopt_space)
+                self.model.fit(x_train, y_train, epochs=200,
+                            batch_size=30, verbose=0)
+                return self.model
+            else:
+                # Dont Optmize
+                self.model = self.build_fn.__call__(x_train=x_train)
+                self.model.fit(x_train, y_train, epochs=500, batch_size=500)
+                return self.model
+
+        def save(self, filename = None):
+            if filename == None:
+                raise ValueError('Name Error: to save the model you need to specify the filename')
+
+            pickle.dump(self.model, open(filename, 'wb'))
+            onnx_model = onnxmltools.convert_keras(self.model)
+            return onnx_model
+
+
+class SklearnKerasRegressor(KerasRegressor):
+        def __init__(self, build_fn, **kwargs):
+            super(KerasRegressor, self).__init__(build_fn=build_fn)
+            self.primal = kwargs['primal']
+            self.params = kwargs['params']
+            self.best = kwargs['best']
+
+        def fit(self, x_train, y_train, **kwargs):
+            # Check whether to compute for the best model or not
+            if (self.best):
+                # Optimize
+                primal_model = self.primal
+                primal_model.fit(x_train, y_train)
+                y_pred = primal_model.predict(x_train)
+                primal_data = {
+                    'y_pred': y_pred,
+                    'model_name': primal_model.__class__.__name__
+                }
+
+                self.model, final_epoch, final_batch_size = get_best_model(
+                    x_train, y_train, primal_data=primal_data,
+                    params=self.params, build_fn=self.build_fn)
+                # Epochs and batch_size passed in Talos as well
+                self.model.fit(x_train, y_train, epochs=final_epoch,
+                    batch_size=final_batch_size, verbose=0)
+                return self.model
+            else:
+                # Dont Optmize
+                self.model = self.build_fn.__call__(x_train=x_train)
+                self.model.fit(x_train, y_train, epochs=500, batch_size=500)
+                return self.model
+
+        def score(self, x, y, **kwargs):
+            score = super(SklearnKerasRegressor, self).score(x, y, **kwargs)
+            # keras_regressor treats all score values as loss and adds a '-ve' before passing
+            return -score
+
+        def save(self, filename=None):
+            if filename == None:
+                raise ValueError(
+                    'Name Error: to save the model you need to specify the filename')
+
+            pickle.dump(self.model, open(filename, 'wb'))
+            onnx_model = onnxmltools.convert_keras(self.model)
+            return onnx_model
+
+
+wrappers = {
+    'LogisticRegression': SklearnKerasClassifier,
+    'LinearRegression': SklearnKerasRegressor,
+    'LinearDiscriminantAnalysis': SklearnKerasClassifier
+}

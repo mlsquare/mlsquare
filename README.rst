@@ -3,7 +3,7 @@ mlsquare
 ========
 
 
-Add a short description here!
+Machine Learning for Machine Learning
 
 
 Description
