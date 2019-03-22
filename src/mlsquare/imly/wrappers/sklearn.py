@@ -15,15 +15,25 @@ class SklearnKerasClassifier(KerasClassifier):
             self.best = kwargs['best']
 
         def fit(self, x_train, y_train, **kwargs):
+            import numpy as np
+
             kwargs.setdefault('params', self.params)
             kwargs.setdefault('space', False)
-            self.params.update(kwargs['params'])
-            # Check whether to compute for the best model or not
-            if (self.best and (kwargs['params'] != self.params or kwargs['space'])):
-                # Optimize
-                import numpy as np
 
+            y_train = np.array(y_train)
+            if len(y_train.shape) == 2 and y_train.shape[1] > 1:
+                self.classes_ = np.arange(y_train.shape[1])
+            elif (len(y_train.shape) == 2 and y_train.shape[1] == 1) or len(y_train.shape) == 1:
+                self.classes_ = np.unique(y_train)
+                y_train = np.searchsorted(self.classes_, y_train)
+            else:
+                raise ValueError(
+                        'Invalid shape for y_train: ' + str(y_train.shape))
+            # Check whether to compute for the best model or not
+            if (self.best and kwargs['params'] != self.params and kwargs['space']):
+                # Optimize
                 hyperopt_space = kwargs['space']
+                self.params.update(kwargs['params'])
 
                 primal_model = self.primal
                 primal_model.fit(x_train, y_train)
@@ -32,14 +42,6 @@ class SklearnKerasClassifier(KerasClassifier):
                     'y_pred': y_pred,
                     'model_name': primal_model.__class__.__name__
                 }
-                y_train = np.array(y_train)
-                if len(y_train.shape) == 2 and y_train.shape[1] > 1:
-                    self.classes_ = np.arange(y_train.shape[1])
-                elif (len(y_train.shape) == 2 and y_train.shape[1] == 1) or len(y_train.shape) == 1:
-                    self.classes_ = np.unique(y_train)
-                    y_train = np.searchsorted(self.classes_, y_train)
-                else:
-                    raise ValueError('Invalid shape for y_train: ' + str(y_train.shape))
 
                 ## Search for best model using Tune ##
                 self.model = get_best_model(x_train, y_train,
@@ -71,7 +73,7 @@ class SklearnKerasRegressor(KerasRegressor):
 
         def fit(self, x_train, y_train, **kwargs):
             # Check whether to compute for the best model or not
-            if (self.best):
+            if (self.best and self.params != None):
                 # Optimize
                 primal_model = self.primal
                 primal_model.fit(x_train, y_train)

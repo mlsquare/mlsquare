@@ -69,12 +69,12 @@ def _run_multiple(model, datasets):
         primal_score_2, keras_score_2 = _imly(
             model=model, dataset=dataset, using='dnn', best=True)
 
-        assert 0 < primal_score_0 < 1
-        assert 0 < keras_score_0 < 1
-        assert 0 < primal_score_1 < 1
-        assert 0 < keras_score_1 < 1
-        assert 0 < primal_score_2 < 1
-        assert 0 < keras_score_2 < 1
+        assert 0 <= primal_score_0 <= 1
+        assert 0 <= keras_score_0 <= 1
+        assert 0 <= primal_score_1 <= 1
+        assert 0 <= keras_score_1 <= 1
+        assert 0 <= primal_score_2 <= 1
+        assert 0 <= keras_score_2 <= 1
 
 def test_linear_regression():
     datasets = [_load_diabetes]

@@ -19,7 +19,8 @@ def generic_linear_model(**kwargs):
                         input_dim=kwargs['x_train'].shape[1],
                         activation=model_params['activation']))
         model.compile(optimizer=model_params['optimizer'],
-                      loss=model_params['losses'])
+                      loss=model_params['losses'],
+                      metrics=['accuracy'])
 
         return model
     except ImportError:
