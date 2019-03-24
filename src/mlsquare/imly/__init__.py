@@ -2,30 +2,32 @@
 # -*- coding: utf-8 -*-
 
 """
-    This file is the core of MLSquare's IMLY
-    This contains the core function dope which exposed
-    This Contains dope function, using which we create the core IMLY model
+This is the base file that serves as the core of MLSquare's IMLY Module
+
+This exposes the function `dope` which transpiles any given model to its implementation using Deep Neural Networks.
 """
 
-import json, copy
+import json
+import copy
 from .commons.functions import _get_model_class, _get_model_module
 
 
 def dope(model, **kwargs):
-    # using = 'dnn', best = True
-    """ #look for the syntax
-    Augments the model using DNN with optimization
+    """Augments a given model using DNN with optimization
 
-    # Arguments
-        model: The primal model passed by the user that needs to be transpiled.
-        using: Choose the algo to transpile the model
+    Args:
+        model (class): The primal model passed by the user that needs to be transpiled.
+        using (str): Choose the algo to transpile the model
+
             1. None: returns the model as it is
-            2. dnn (default): converts the model to run using deep neural network
-        best: Whether to optmize the model or not
-        **kwargs: Dictionary of parameters mapped to their keras params.
 
-    # Returns
-        The transpiled model.
+            2. dnn (default): converts the model to run using deep neural network
+
+        best (bool): Whether to optmize the model or not
+        **kwargs (dict): Dictionary of parameters mapped to their keras params.
+
+    Returns:
+        model (class): The transpiled model.
     """
 
     # Set the default values for the arguments
@@ -48,17 +50,18 @@ def dope(model, **kwargs):
 
         # Check for the imly support for the module
         if (module in config.keys() and model_name in config[module]):
-            print ("Transpiling the model to use Deep Neural Networks")
+            print("Transpiling the model to use Deep Neural Networks")
             primal = copy.deepcopy(model)
 
             # Get the model architecture and params
             # If None return primal
-            from .architectures import ModelMiddleware, __get_architecture
-            model_architecture, model_params = __get_architecture(module, model_name)
+            from .architectures import ModelMiddleware, _get_architecture
+            model_architecture, model_params = _get_architecture(
+                module, model_name)
             if model_architecture and model_params:
                 build_fn = ModelMiddleware(fn=model_architecture,
-                                        params=model_params,
-                                        primal=primal)
+                                           params=model_params,
+                                           primal=primal)
             else:
                 return primal
 
@@ -68,21 +71,23 @@ def dope(model, **kwargs):
             wrapper_class = _get_wrapper_class(module, model_name)
             if wrapper_class:
                 model = wrapper_class(build_fn=build_fn, params=None,
-                                                primal = primal,
-                                                best = kwargs['best'])
+                                      primal=primal,
+                                      best=kwargs['best'])
             else:
-                return model
+                return primal
 
             # Return the model as it is if required modules are not installed
-            if (model == False):
+            if not model:
                 return primal
 
             return model
         else:
-            print ("%s from the package %s is not yet supported" % (model_name, module))
-            print ("Returing the  without transpiling") # complete
+            print("%s from the package %s is not yet supported" %
+                  (model_name, module))
+            print("Returing the  without transpiling")  # complete
             return model
         return model
     else:
-        print ("Transpiling the model using %s is not yet supported. We support 'dnn' as of now" % (kwargs['using']))
+        print("Transpiling the model using %s is not yet supported. We support 'dnn' as of now" % (
+            kwargs['using']))
         return model

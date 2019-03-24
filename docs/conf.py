@@ -41,20 +41,20 @@ try:
 except FileNotFoundError:
     pass
 
-try:
-    import sphinx
-    from pkg_resources import parse_version
+# try:
+#     import sphinx
+#     from pkg_resources import parse_version
 
-    cmd_line_template = "sphinx-apidoc -f -o {outputdir} {moduledir}"
-    cmd_line = cmd_line_template.format(outputdir=output_dir, moduledir=module_dir)
+#     cmd_line_template = "sphinx-apidoc -f -o {outputdir} {moduledir}"
+#     cmd_line = cmd_line_template.format(outputdir=output_dir, moduledir=module_dir)
 
-    args = cmd_line.split(" ")
-    if parse_version(sphinx.__version__) >= parse_version('1.7'):
-        args = args[1:]
+#     args = cmd_line.split(" ")
+#     if parse_version(sphinx.__version__) >= parse_version('1.7'):
+#         args = args[1:]
 
-    apidoc.main(args)
-except Exception as e:
-    print("Running `sphinx-apidoc` failed!\n{}".format(e))
+#     apidoc.main(args)
+# except Exception as e:
+#     print("Running `sphinx-apidoc` failed!\n{}".format(e))
 
 # -- General configuration -----------------------------------------------------
 
@@ -82,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'mlsquare'
-copyright = u'2018, Ravi Mula'
+copyright = u'2018, MLSquare Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -135,15 +135,12 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    'sidebar_width': '300px',
-    'page_width': '1200px'
-}
+# html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -183,7 +180,7 @@ html_static_path = ['_static']
 # html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-# html_sidebars = {}
+html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -236,7 +233,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'user_guide.tex', u'mlsquare Documentation',
-   u'Ravi Mula', 'manual'),
+   u'MLSquare Foundation', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -261,12 +258,13 @@ latex_documents = [
 
 # -- External mapping ------------------------------------------------------------
 python_version = '.'.join(map(str, sys.version_info[0:2]))
-intersphinx_mapping = {
-    'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
-    'python': ('https://docs.python.org/' + python_version, None),
-    'matplotlib': ('https://matplotlib.org', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'sklearn': ('http://scikit-learn.org/stable', None),
-    'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-}
+
+# intersphinx_mapping = {
+#     'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
+#     'python': ('https://docs.python.org/' + python_version, None),
+#     'matplotlib': ('https://matplotlib.org', None),
+#     'numpy': ('https://docs.scipy.org/doc/numpy', None),
+#     'sklearn': ('http://scikit-learn.org/stable', None),
+#     'pandas': ('http://pandas.pydata.org/pandas-docs/stable', None),
+#     'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+# }

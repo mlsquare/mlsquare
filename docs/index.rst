@@ -1,27 +1,58 @@
+.. .. image:: _gfx/logo.png
+..    :height: 300px
+..    :width: 512px
+..    :scale: 60 %
+..    :alt: MLSquare Logo
+..    :align: center
+
+.. |
+
 ========
-mlsquare
+MLSquare
 ========
 
-This is the documentation of **mlsquare**.
+**MLSquare** is an open source developer-friendly Python__ library, designed to make use of Deep Learning for Machine Learning developers.
+
+__ http://python.org/
 
 .. note::
+    :py:mod:`mlsquare` python library is developed and maintained by `MLSquare Foundation`__
 
-    This is the main page of your project's `Sphinx`_ documentation.
-    It is formatted in `reStructuredText`_. Add additional pages
-    by creating rst-files in ``docs`` and adding them to the `toctree`_ below.
-    Use then `references`_ in order to link them from this page, e.g.
-    :ref:`authors` and :ref:`changes`.
+    __ http://mlsquare.org
 
-    It is also possible to refer to the documentation of other Python packages
-    with the `Python domain syntax`_. By default you can reference the
-    documentation of `Sphinx`_, `Python`_, `NumPy`_, `SciPy`_, `matplotlib`_,
-    `Pandas`_, `Scikit-Learn`_. You can add more by extending the
-    ``intersphinx_mapping`` in your Sphinx's ``conf.py``.
+In the first version we come up with **Interoperable Machine Learning [IMLY]**. `IMLY` is aimed to provide every Machine Learning Algorithm with an equivalent DNN Implementation.
 
-    The pretty useful extension `autodoc`_ is activated by default and lets
-    you include documentation from docstrings. Docstrings can be written in
-    `Google style`_ (recommended!), `NumPy style`_ and `classical style`_.
+Getting Started!
+================
 
+Setting up :py:mod:`mlsquare` is simple and easy
+
+    1. Create a Virtual Environment
+
+    .. code-block:: bash
+
+        virtualenv ~/.venv
+        source ~/.venv/bin/activate
+
+    2. Install :py:mod:`mlsquare` package
+
+    .. code-block:: bash
+
+        pip install mlsquare
+
+    3. Import :py:meth:`dope` function from :py:mod:`mlsquare` and pass the :py:mod:`sklearn` model object
+
+    .. code-block:: python
+
+        >>> from mlsquare.imly import dope
+        >>> from sklearn.linear_model import LinearRegression
+
+        >>> model = LinearRegression()
+        >>> m = dope(model)
+
+        >>> # All sklearn operations can be performed on m, except that the underlying implementation uses DNN
+        >>> m.fit(x_train, y_train)
+        >>> m.score(x_test, y_test)
 
 Contents
 ========
@@ -29,18 +60,30 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   Installation <installation>
+   User Guide <user>
+   Developer Guide <developer>
+   Module Reference <api>
    License <license>
    Authors <authors>
    Changelog <changelog>
-   Module Reference <api/modules>
+   Supported Modules <support>
+
+External links
+==============
+
+* `Online documentation <https://mlsquare.readthedocs.io/>`_ (Read the Docs)
+* `Downloads <http://pypi.python.org/pypi/mlsquare/>`_ (PyPI)
+* `Source code <https://github.com/mlsquare/mlsquare>`_ (Github)
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
+
+.. * :ref:`modindex`
 
 .. _toctree: http://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html
 .. _reStructuredText: http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
@@ -57,3 +100,5 @@ Indices and tables
 .. _Google style: https://github.com/google/styleguide/blob/gh-pages/pyguide.md#38-comments-and-docstrings
 .. _NumPy style: https://numpydoc.readthedocs.io/en/latest/format.html
 .. _classical style: http://www.sphinx-doc.org/en/stable/domains.html#info-field-lists
+
+.. vim: set spell spelllang=en:

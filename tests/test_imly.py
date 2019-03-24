@@ -19,8 +19,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_squared_error
 
-from mlsquare.imly.models import dope
-# from mlsquare.imly.commons.correlations import concordance_correlation_coefficient as ccc
+from mlsquare.imly import dope
 from datasets import _load_diabetes, _load_airfoil, _load_iris, _load_salary
 
 
