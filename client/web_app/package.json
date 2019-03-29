@@ -1,0 +1,23 @@
+{
+  "name": "onnx_web",
+  "version": "1.0.0",
+  "description": "Web app to demonstrate js capabilities of onnx",
+  "main": "app.js",
+  "directories": {
+    "example": "example"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "csv": "^5.1.1",
+    "express": "^4.16.4",
+    "micromodal": "^0.3.2",
+    "ndarray": "^1.0.18",
+    "onnxjs": "^0.1.5",
+    "papaparse": "^4.6.3",
+    "watchify": "^3.11.1"
+  },
+  "engines": {
+    "node": "8.10.0"
+  }
+}

@@ -1,0 +1,78 @@
+<head>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.2/css/all.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script> -->
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-10 col-xl-9 mx-auto">
+        <div class="card card-signin flex-row my-5">
+          <div class="card-img-left d-none d-md-flex">
+          </div>
+          <div class="card-body">
+            <h5 class="card-title text-center">Test your ONNX Model</h5>
+            <form class="form-signin">
+              <div class="form-label-group">
+
+              <input id='real-onnx' type='file' hidden/>
+              <button id='custom-onnx-btn' class="btn btn-lg btn-primary btn-block text-uppercase" type="button">Upload ONNX Model</button>
+              <br>
+              <input id='real-csv' type='file' hidden/>
+              <button id='custom-csv-btn' class="btn btn-lg btn-primary btn-block text-uppercase" type="button">Upload test csv file</button>
+              <br>
+              <!-- <input id='real-score' type='file' hidden/> -->
+              <button id='score-btn' class="btn btn-lg btn-primary btn-block text-uppercase" type="button" data-micromodal-trigger="modal-1">Score</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/tfjs-onnx@0.1.1/dist/browser/tfjs-onnx.min.js"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/onnxjs@0.1.5/dist/onnx.min.js"></script> -->
+  <!-- <script type="text/javascript" src="converter.js"></script> -->
+  <!-- [1] -->
+ <div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+        <header class="modal__header">
+          <h2 class="modal__title" id="modal-1-title">
+            And your score is...
+          </h2>
+          <!-- <button class="modal__close" aria-label="Close modal" data-micromodal-close></button> -->
+        </header>
+        <main class="modal__content" id="modal-1-content">
+          <p>
+            <h3>
+             <samp id='score-value' class="score-value-holder">
+             </samp>
+             </h3>
+            <!-- Try hitting the <code>tab</code> key and notice how the focus stays within the modal itself. Also, <code>esc</code> to close modal. -->
+          <div id="loader-icon">
+          <div class="d-flex justify-content-center">
+            <div class="spinner-grow text-primary" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
+        </div>
+          </p>
+        </main>
+        <footer class="modal__footer">
+          <!-- <button class="modal__btn modal__btn-primary">Continue</button> -->
+          <!-- <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Close</button> -->
+        </footer>
+      </div>
+    </div>
+  </div>  
+
+
+<script src="bundle.js"></script>
+<!-- <script src="converter.js"></script> -->
+</body>
