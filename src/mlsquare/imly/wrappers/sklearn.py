@@ -16,7 +16,8 @@ class SklearnKerasClassifier(KerasClassifier):
 
         def fit(self, x_train, y_train, **kwargs):
             import numpy as np
-
+            kwargs.setdefault('verbose', 0)
+            verbose = kwargs['verbose']
             kwargs.setdefault('params', self.params)
             kwargs.setdefault('space', False)
 
@@ -47,12 +48,12 @@ class SklearnKerasClassifier(KerasClassifier):
                 self.model = get_best_model(x_train, y_train,
                     primal_data=primal_data, params=self.params, space=hyperopt_space)
                 self.model.fit(x_train, y_train, epochs=200,
-                            batch_size=30, verbose=0) # Not necessary. Fitting twice by now.
+                            batch_size=30, verbose=verbose) # Not necessary. Fitting twice by now.
                 return self.model # Not necessary.
             else:
                 # Dont Optmize
                 self.model = self.build_fn.__call__(x_train=x_train)
-                self.model.fit(x_train, y_train, epochs=500, batch_size=500)
+                self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
                 return self.model # Not necessary.
 
         def save(self, filename = None):
@@ -76,6 +77,8 @@ class SklearnKerasRegressor(KerasRegressor):
 
         def fit(self, x_train, y_train, **kwargs):
             # Check whether to compute for the best model or not
+            kwargs.setdefault('verbose', 0)
+            verbose = kwargs['verbose']
             if (self.best and self.params != None):
                 # Optimize
                 primal_model = self.primal
@@ -91,7 +94,7 @@ class SklearnKerasRegressor(KerasRegressor):
                     params=self.params, build_fn=self.build_fn)
                 # Epochs and batch_size passed in Talos as well
                 self.model.fit(x_train, y_train, epochs=final_epoch,
-                    batch_size=final_batch_size, verbose=0)
+                    batch_size=final_batch_size, verbose=verbose)
                 return self.model
             else:
                 # Dont Optmize
