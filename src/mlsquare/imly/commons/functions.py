@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    This file is the common functions required by multiple entities
+    This file holds utility functions used by multiple entities.
 """
 
 

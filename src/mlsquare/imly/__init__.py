@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This is the base file that serves as the core of MLSquare's IMLY Module
-
-This exposes the function `dope` which transpiles any given model to its implementation using Deep Neural Networks.
+This is the base file that serves as the core of MLSquare's IMLY Module.
+This exposes the function `dope`. Dope transpiles any given model to it's DNN(Deep Neural Networks) equivalent.
 """
 
 import json
@@ -13,17 +12,18 @@ from .commons.functions import _get_model_class, _get_model_module
 
 
 def dope(model, **kwargs):
-    """Augments a given model using DNN with optimization
+    """Transpiles a given model to it's DNN equivalent.
 
     Args:
         model (class): The primal model passed by the user that needs to be transpiled.
-        using (str): Choose the algo to transpile the model
+        using (str): Choice of type of "model transpilation" you want your model to undergo.
+        Currently accepts None and 'dnn' as values.
 
-            1. None: returns the model as it is
+            1. None: Returns the model as it is.
 
-            2. dnn (default): converts the model to run using deep neural network
+            2. dnn (default): Converts the model to it's DNN equivalent.
 
-        best (bool): Whether to optmize the model or not
+        best (bool): Whether to optmize the model or not.
         **kwargs (dict): Dictionary of parameters mapped to their keras params.
 
     Returns:
@@ -38,7 +38,7 @@ def dope(model, **kwargs):
         return model
 
     elif (kwargs['using'] == 'dnn'):
-        # get list of supported packages and algorithms
+        # Get list of supported packages and algorithms
         try:
             # Valid
             config = json.load(open('./src/mlsquare/imly/config/dnn.config'))
@@ -48,9 +48,9 @@ def dope(model, **kwargs):
         module = _get_model_module(model)
         model_name = _get_model_class(model)
 
-        # Check for the imly support for the module
+        # Check if imly support module/package used by the user.
         if (module in config.keys() and model_name in config[module]):
-            print("Transpiling the model to use Deep Neural Networks")
+            print("Transpiling your model to it's Deep Neural Network equivalent")
             primal = copy.deepcopy(model)
 
             # Get the model architecture and params
@@ -63,6 +63,8 @@ def dope(model, **kwargs):
                                            params=model_params,
                                            primal=primal)
             else:
+                print("Unable to find a relevent dnn model architecture for the model you provided.\
+                    Hence, returning the model without transpiling.")
                 return primal
 
             # Get the model wrapper class
@@ -74,17 +76,21 @@ def dope(model, **kwargs):
                                       primal=primal,
                                       best=kwargs['best'])
             else:
+                print("Unable to find a relevent wrapper function for the model you provided.\
+                    Hence, returning the model without transpiling.")
                 return primal
 
             # Return the model as it is if required modules are not installed
             if not model:
+                print("Returning the model without transpiling since the required modules \
+                were not installed.")
                 return primal
 
             return model
         else:
             print("%s from the package %s is not yet supported" %
                   (model_name, module))
-            print("Returing the  without transpiling")  # complete
+            print("Returing the model without transpiling")  # complete
             return model
         return model
     else:
