@@ -65,9 +65,8 @@ Setting up ``mlsquare`` is simple and easy
 Tutorial
 ================
 
-If you feel the above example is incomplete please do checkout `this`__
-
-__https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb comprehensive tutorial on using IMLY.
+For a comprehensive tutorial please do checkout this `link`__
+__https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
 
 
 
