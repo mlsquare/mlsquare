@@ -20,7 +20,7 @@ class SklearnKerasClassifier(KerasClassifier):
             kwargs.setdefault('params', self.params)
             kwargs.setdefault('space', False)
 
-            y_train = np.array(y_train)
+            y_train = np.array(y_train) # Compatibility with all formats?
             if len(y_train.shape) == 2 and y_train.shape[1] > 1:
                 self.classes_ = np.arange(y_train.shape[1])
             elif (len(y_train.shape) == 2 and y_train.shape[1] == 1) or len(y_train.shape) == 1:
@@ -47,13 +47,13 @@ class SklearnKerasClassifier(KerasClassifier):
                 self.model = get_best_model(x_train, y_train,
                     primal_data=primal_data, params=self.params, space=hyperopt_space)
                 self.model.fit(x_train, y_train, epochs=200,
-                            batch_size=30, verbose=0)
-                return self.model
+                            batch_size=30, verbose=0) # Not necessary. Fitting twice by now.
+                return self.model # Not necessary.
             else:
                 # Dont Optmize
                 self.model = self.build_fn.__call__(x_train=x_train)
                 self.model.fit(x_train, y_train, epochs=500, batch_size=500)
-                return self.model
+                return self.model # Not necessary.
 
         def save(self, filename = None):
             if filename == None:

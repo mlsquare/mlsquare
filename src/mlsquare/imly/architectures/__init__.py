@@ -18,7 +18,7 @@ class ModelMiddleware:
 
 def _get_architecture(module, model_name):
     """
-    Given a model name, it returns the a skeleton and params
+    Given a model name, it returns the skeleton and params
 
     Args:
         module (str): The module from where primal model was initialised

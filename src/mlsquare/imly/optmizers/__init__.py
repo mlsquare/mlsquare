@@ -3,11 +3,11 @@ import ray
 from ray.tune.suggest import HyperOptSearch
 import os
 from ..architectures import ModelMiddleware
-from tensorflow import set_random_seed
-from numpy.random import seed
+# from tensorflow import set_random_seed
+# from numpy.random import seed
 
-seed(3)
-set_random_seed(3)
+# seed(3)
+# set_random_seed(3)
 
 # Initialize ray
 ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
@@ -18,7 +18,7 @@ def get_best_model(x_train, y_train, **kwargs):
     y_pred = kwargs['primal_data']['y_pred']
     model_name = kwargs['primal_data']['model_name']
     # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
-    mapping_instance = kwargs['build_fn']
+    mapping_instance = kwargs['build_fn'] # Rename mapping_instance dnn_instance
 
     kwargs.setdefault('space', False)
 
@@ -49,7 +49,7 @@ def get_best_model(x_train, y_train, **kwargs):
 
     # This validation is to check if the user has opted for hyperopt search method
     if kwargs['space']:
-        print('hyperopt choosen')
+        print('hyperopt choosen') # Remove or replace with a better message
         space = kwargs['space']
         hyperopt_search = HyperOptSearch(space, reward_attr="mean_accuracy")
         # TODO
