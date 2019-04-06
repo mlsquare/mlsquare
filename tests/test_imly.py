@@ -44,6 +44,8 @@ def _imly(model, dataset, test_size = 0.60, using='dnn', best=True, **kwargs):
     m = dope(model, using=using, best=best)
     m.fit(x_train, y_train.values.ravel())
     keras_score = m.score(x_test, y_test)
+    if (using == 'dnn'):
+        m.save('test_save_method')
     print ("========= OUTPUT OF RESULT =========\n")
     print ("Args Passed: \n")
     print ("Model: %s\n" % model.__class__.__name__)

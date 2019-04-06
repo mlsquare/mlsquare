@@ -48,3 +48,7 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 .vscode*/
+tests/test_sh.py
+test_save_method
+test_save_method.h5
+test_save_method.onnx

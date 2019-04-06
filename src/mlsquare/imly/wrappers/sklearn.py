@@ -59,7 +59,7 @@ class SklearnKerasClassifier(KerasClassifier):
             if filename == None:
                 raise ValueError('Name Error: to save the model you need to specify the filename')
 
-            pickle.dump(self.model, open(filename, 'wb'))
+            pickle.dump(self.model, open(filename + '.pkl', 'wb'))
 
             self.model.save(filename + '.h5')
             
@@ -109,7 +109,7 @@ class SklearnKerasRegressor(KerasRegressor):
                 raise ValueError(
                     'Name Error: to save the model you need to specify the filename')
 
-            pickle.dump(self.model, open(filename, 'wb'))
+            pickle.dump(self.model, open(filename + '.pkl', 'wb'))
 
             self.model.save(filename + '.h5')
             
