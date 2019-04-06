@@ -66,7 +66,7 @@ Tutorial
 ================
 
 For a comprehensive tutorial please do checkout this `link`__
-__https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
+__ https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
 
 
 

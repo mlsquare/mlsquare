@@ -11,10 +11,6 @@ Developer Guide
 3. Raise a pull request against the ``master`` branch
 
 
-FAQ
-===
-
-
 
 How to raise a pull request
 ===========================
