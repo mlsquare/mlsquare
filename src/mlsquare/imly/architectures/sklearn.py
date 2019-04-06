@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-from tensorflow import set_random_seed
-from numpy.random import seed
-seed(3)
-set_random_seed(3)
+# from tensorflow import set_random_seed
+# from numpy.random import seed
+# seed(3)
+# set_random_seed(3)
 
 
 def generic_linear_model(**kwargs):

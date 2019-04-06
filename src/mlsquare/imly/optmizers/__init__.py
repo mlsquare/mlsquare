@@ -3,11 +3,11 @@ import ray
 from ray.tune.suggest import HyperOptSearch
 import os
 from ..architectures import ModelMiddleware
-from tensorflow import set_random_seed
-from numpy.random import seed
+# from tensorflow import set_random_seed
+# from numpy.random import seed
 
-seed(3)
-set_random_seed(3)
+# seed(3)
+# set_random_seed(3)
 
 # Initialize ray
 ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,

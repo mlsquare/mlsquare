@@ -38,12 +38,13 @@ def dope(model, **kwargs):
         return model
 
     elif (kwargs['using'] == 'dnn'):
-        # Get list of supported packages and algorithms
-        try:
-            # Valid
-            config = json.load(open('./src/mlsquare/imly/config/dnn.config'))
-        except:
-            config = json.load(open('./mlsquare/imly/config/dnn.config'))
+        import pkg_resources
+        resource_package = __name__
+        config_path = '/'.join(('config', 'dnn.config'))
+
+        # get list of supported packages and algorithms
+        config = json.load(
+            open(pkg_resources.resource_filename(resource_package, config_path)))
 
         module = _get_model_module(model)
         model_name = _get_model_class(model)
