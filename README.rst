@@ -62,11 +62,12 @@ Setting up ``mlsquare`` is simple and easy
         >>> m.score(x_test, y_test)
 
 ================
-Tutorials
+Tutorial
 ================
 
-If you feel the above example is incomplete please do checkout `this`__https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb__
-comprehensive tutorial on using IMLY.
+If you feel the above example is incomplete please do checkout `this<https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb>`_ comprehensive tutorial on using IMLY.
+
+
 
 For detailed documentation refer `documentation`__
 
