@@ -67,6 +67,11 @@ Setting up :py:mod:`mlsquare` is simple and easy
         >>> m.fit(x_train, y_train)
         >>> m.score(x_test, y_test)
 
+.. note::
+    For a comprehensive tutorial please do checkout this `link`__
+
+    __ https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
+
 Contents
 ========
 
