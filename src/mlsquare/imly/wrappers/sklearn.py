@@ -65,7 +65,6 @@ class SklearnKerasClassifier(KerasClassifier):
             
             onnx_model = onnxmltools.convert_keras(self.model)
             onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
-            # return onnx_model
 
 
 class SklearnKerasRegressor(KerasRegressor):
@@ -111,8 +110,11 @@ class SklearnKerasRegressor(KerasRegressor):
                     'Name Error: to save the model you need to specify the filename')
 
             pickle.dump(self.model, open(filename, 'wb'))
+
+            self.model.save(filename + '.h5')
+            
             onnx_model = onnxmltools.convert_keras(self.model)
-            return onnx_model
+            onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
 
 wrappers = {
