@@ -34,9 +34,12 @@ def _get_architecture(module, model_name):
 
     import json
 
+    import pkg_resources
+    resource_package = __name__
+    config_path = '/model_architecture.config'
 
     model_architecture = json.load(
-        open('./src/mlsquare/imly/architectures/model_architecture.config'))
+        open(pkg_resources.resource_filename(resource_package, config_path)))
 
     # Return
     # 1. Skeleton Function

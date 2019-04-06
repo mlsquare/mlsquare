@@ -66,6 +66,7 @@ Contents
    Module Reference <api>
    License <license>
    Authors <authors>
+   Issues <issues>
    Changelog <changelog>
    Supported Modules <support>
 
