@@ -51,18 +51,18 @@ Setting up ``mlsquare`` is simple and easy
         >>> from sklearn.preprocessing import StandardScaler
         >>> from sklearn.model_selection import train_test_split
         >>> import pandas as pd
+        >>> from sklearn.datasets import load_diabetes
 
         >>> model = LinearRegression()
-        >>> data = pd.read_csv('./datasets/diabetes.csv', delimiter=",",
-                       header=None, index_col=False)
-        >>> sc = StandardScaler()
-        >>> data = sc.fit_transform(data)
-        >>> data = pd.DataFrame(data)
+        >>> diabetes = load_diabetes()
 
-        >>> X = data.iloc[:, :-1]
-        >>> Y = data.iloc[:, -1]
+        >>> X = diabetes.data
+        >>> sc = StandardScaler()
+        >>> X = sc.fit_transform(X)
+        >>> Y = diabetes.target
         >>> x_train, x_test, y_train, y_test =
             train_test_split(X, Y, test_size=0.60, random_state=0)
+
         >>> m = dope(model)
 
         >>> # All sklearn operations can be performed on m, except that the underlying implementation uses DNN
