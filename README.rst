@@ -12,6 +12,14 @@
   :alt: activity
   :target: https://github.com/mlsquare/mlsquare/pulse
 
+.. |last_commit| image:: https://img.shields.io/github/last-commit/mlsquare/mlsquare.svg
+  :alt: last_commit
+  :target: https://github.com/mlsquare/mlsquare/commits/master
+
+.. |size| image:: https://img.shields.io/github/repo-size/mlsquare/mlsquare.svg
+  :alt: size
+
+
 MLSquare is an open source developer-friendly Python library, designed to make use of Deep Learning for Machine Learning developers.
 
 
