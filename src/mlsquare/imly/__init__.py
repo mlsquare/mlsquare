@@ -32,7 +32,7 @@ def dope(model, **kwargs):
 
     # Set the default values for the arguments
     kwargs.setdefault('using', 'dnn')
-    kwargs.setdefault('best', True)
+    kwargs.setdefault('best', True) # Remove. Optimization should happen by default.
 
     if (kwargs['using'] == None):
         return model
