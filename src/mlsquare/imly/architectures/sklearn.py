@@ -53,8 +53,12 @@ def linear_discriminant_analysis(**kwargs):
         print("keras is required to transpile the model")
         return False
 
+def cart():
+    pass
+
 
 dispatcher = {
     'glm': generic_linear_model,
-    'lda': linear_discriminant_analysis
+    'lda': linear_discriminant_analysis,
+    'cart': cart
 }

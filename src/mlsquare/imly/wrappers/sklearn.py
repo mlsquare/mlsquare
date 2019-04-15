@@ -123,5 +123,6 @@ class SklearnKerasRegressor(KerasRegressor):
 wrappers = {
     'LogisticRegression': SklearnKerasClassifier,
     'LinearRegression': SklearnKerasRegressor,
-    'LinearDiscriminantAnalysis': SklearnKerasClassifier
+    'LinearDiscriminantAnalysis': SklearnKerasClassifier,
+    'DecisionTreeClassifier': SklearnKerasClassifier
 }
