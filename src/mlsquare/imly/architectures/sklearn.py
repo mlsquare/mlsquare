@@ -110,7 +110,7 @@ def cart(**kwargs):
 
     init_ops = tf.global_variables_initializer()
 
-    return init_ops
+    return init_ops, opt, train_step, y_pred, x_ph
 
     # sess.run(tf.global_variables_initializer())
 

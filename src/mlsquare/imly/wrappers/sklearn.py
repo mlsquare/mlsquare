@@ -127,14 +127,11 @@ class SklearnTensorflowClassifier():
             self.params = kwargs['params']
             self.best = kwargs['best']
 
-        def score():
-            pass
-
-        def predict():
-            pass
-
-        def predict_proba():
-            pass
+        def score(self, x, y):
+           import numpy as np
+           # TODO
+           # Fix the access flow of y_pred and x_ph
+           return np.mean(np.argmax(self.y_pred.eval(feed_dict={self.x_ph: x}), axis=1) == np.argmax(y, axis=1))
 
         def fit(self, x_train, y_train, **kwargs):
             import numpy as np
@@ -178,7 +175,7 @@ class SklearnTensorflowClassifier():
             # else:
                 # Dont Optmize
             
-            self.init_ops = self.build_fn.__call__(x_train=x_train)
+            self.init_ops, optimizer, loss, self.y_pred, self.x_ph = self.build_fn.__call__(x_train=x_train)
 
             with tf.Session() as sess:
                 # initialise the variables
@@ -187,26 +184,40 @@ class SklearnTensorflowClassifier():
                 for epoch in range(kwargs['epochs']):
                         avg_cost = 0
                         for i in range(total_batch):
-                            batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
-                            _, c = sess.run([optimiser, cross_entropy], 
-                                        feed_dict={x: batch_x, y: batch_y})
+                            # batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
+                            _, c = sess.run([optimizer, loss], 
+                                            feed_dict={x_ph: x_train, y_ph: y_train})
                             avg_cost += c / total_batch
                         print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost))
-                print(sess.run(accuracy, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
+                # print(sess.run(accuracy, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
 
             # self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
             # return self.model # Not necessary.
+
+        # TODO
+        # Batch split while training
+        # Placeholders for x and y
 
         def save(self, filename = None):
             if filename == None:
                 raise ValueError('Name Error: to save the model you need to specify the filename')
 
-            pickle.dump(self.model, open(filename + '.pkl', 'wb'))
+            import tensorflow as tf
+            from onnx_tf.frontend import tensorflow_graph_to_onnx_model
 
-            self.model.save(filename + '.h5')
+            with tf.gfile.GFile("frozen_graph.pb", "rb") as f:
+                graph_def = tf.GraphDef()
+                graph_def.ParseFromString(f.read())
+                onnx_model = tensorflow_graph_to_onnx_model(graph_def,
+                                                "fc2/add",
+                                                opset=6)
+
+                file = open("tf_test.onnx", "wb")
+                file.write(onnx_model.SerializeToString())
+                file.close()
             
-            onnx_model = onnxmltools.convert_keras(self.model)
-            onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
+            # onnx_model = onnxmltools.convert_keras(self.model)
+            # onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
 
 wrappers = {
