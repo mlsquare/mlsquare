@@ -31,6 +31,7 @@ class Bin(Layer):
     def call(self, x):
         from keras import backend as K # Fix
         import tensorflow as tf
+
         X = x[:, self.index_of_feature : self.index_of_feature + 1]
         D = self.num_of_cuts
         W = K.reshape(tf.linspace(1.0, D + 1.0, D + 1), [1, -1])
@@ -47,30 +48,24 @@ class Bin(Layer):
 
 class KronProd(Layer):
 
-    def __init__(self,cut_points_list, **kwargs):
-        self.cut_points_list = cut_points_list
-#         self.num_class = num_class
+    """
+    A layer to compute the Kron product.
+    This layer expects a list of tensors as input. Kronecker product operation is then applied 
+    in sequence to each element in the list.
+
+    """
+
+    def __init__(self, **kwargs):
         super(KronProd, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        # Create a trainable weight variable for this layer.
-#         self.cut_points = self.add_weight(name='cut_points', # Validate this choice of trainable weight.
-#                                     shape=(self.num_cut,), # Or (self.num_cut,)
-#                                     initializer='uniform',
-#                                     trainable=True)
-        super(KronProd, self).build(input_shape)  # Be sure to call this at the end
+        super(KronProd, self).build(input_shape)
 
     def call(self, x):
         from keras import backend as K # Fix
         import tensorflow as tf
         from functools import reduce
         input_tensor_list = x
-#         input_tensor_list = []
-#         start_point = 0
-#         for i in self.cut_points_list:
-#           end_point = start_point + i + 1
-#           input_tensor_list.append(x[:, start_point:end_point])
-#           start_point = end_point
           
         def kron_prod(a,b):
           res = tf.einsum('ij,ik->ijk', a, b)
@@ -78,7 +73,6 @@ class KronProd(Layer):
           return res
         
         output = reduce(kron_prod, input_tensor_list)
-        
         self.output_dim = output.get_shape().as_list()
 
         return output
