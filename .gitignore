@@ -52,3 +52,4 @@ tests/test_sh.py
 *.pkl
 *.h5
 *.onnx
+src/mlsquare/experiment.py

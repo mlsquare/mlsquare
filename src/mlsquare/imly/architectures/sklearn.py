@@ -27,7 +27,7 @@ def generic_linear_model(**kwargs):
         return False
 
 
-def linear_discriminant_analysis(**kwargs):
+def linear_discriminant_analysis(**kwargs): # Refactor!
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
@@ -52,9 +52,34 @@ def linear_discriminant_analysis(**kwargs):
         print("keras is required to transpile the model")
         return False
 
+def decision_tree_classifier(**kwargs):
+    try:
+        from keras.models import Model
+        from keras.layers import Input, Dense
+        from ..commons.custom_layers import DecisionTree
+
+        model_params = kwargs['model_params']
+
+        default_cutpoints = [1 for i in range(kwargs['x_train'].shape[1])]
+
+        kwargs.setdefault('cuts_per_feature', default_cutpoints)
+        visible = Input(shape=(kwargs['x_train'].shape[1],))
+        hidden = DecisionTree(cuts_per_feature=kwargs['cuts_per_feature'])(visible)
+        output = Dense(model_params['units'], activation=model_params['activation'])(hidden)
+        model = Model(inputs=visible, outputs=output)
+        model.compile(optimizer=model_params['optimizer'],
+                      loss=model_params['losses'],
+                      metrics=['accuracy'])
+
+        return model
+    except ImportError:
+        print("keras is required to transpile the model")
+        return False
+
 
 
 dispatcher = {
     'glm': generic_linear_model,
-    'lda': linear_discriminant_analysis
+    'lda': linear_discriminant_analysis,
+    'dt_classifier': decision_tree_classifier
 }
