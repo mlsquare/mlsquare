@@ -156,9 +156,10 @@ class DecisionTree(Layer):
       
       bin_result = []
       for i, value in enumerate(self.cuts_per_feature):
-        bin_result.append(
-            self.binning_fn(index_of_feature=i, num_of_cuts=value, x=x)
-        )
+          if value != 0:
+            bin_result.append(
+                self.binning_fn(index_of_feature=i, num_of_cuts=value, x=x)
+            )
 
       output = reduce(kron_prod, bin_result)
       self.output_dim = output.get_shape().as_list()
@@ -169,6 +170,6 @@ class DecisionTree(Layer):
         return (input_shape[0], self.output_dim[1])
 
 ## TODO
-# Default cutpoints - sealing function
+# Default cutpoints - ceiling operation
 # Error handling in layers
 # Fix multiple imports

@@ -10,10 +10,14 @@ class ModelMiddleware:
 
     def __call__(self, **kwargs):
         try:
-            model = self.fn(model_params=self.params, x_train=kwargs['x_train'])
+            if self.fn.__name__ is not 'decision_tree_classifier':
+                model = self.fn(model_params=self.params, x_train=kwargs['x_train'])
+            else:
+                model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
+                                cuts_per_feature=kwargs['cuts_per_feature'], units=kwargs['units'])
             return model
-        except KeyError:
-            return False
+        except KeyError as e:
+            raise KeyError('Missing argument {} while creating model. '.format(e))
 
 
 def _get_architecture(module, model_name):

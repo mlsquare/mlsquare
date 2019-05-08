@@ -59,13 +59,15 @@ def decision_tree_classifier(**kwargs):
         from ..commons.custom_layers import DecisionTree
 
         model_params = kwargs['model_params']
+        kwargs.setdefault('units', kwargs['model_params']['units'])
 
-        default_cutpoints = [1 for i in range(kwargs['x_train'].shape[1])]
+        # default_cutpoints = [1 for i in range(kwargs['x_train'].shape[1])]
 
-        kwargs.setdefault('cuts_per_feature', default_cutpoints)
+        # kwargs.setdefault('cuts_per_feature', default_cutpoints)
+        print(kwargs['cuts_per_feature'])
         visible = Input(shape=(kwargs['x_train'].shape[1],))
         hidden = DecisionTree(cuts_per_feature=kwargs['cuts_per_feature'])(visible)
-        output = Dense(model_params['units'], activation=model_params['activation'])(hidden)
+        output = Dense(kwargs['units'], activation=model_params['activation'])(hidden)
         model = Model(inputs=visible, outputs=output)
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['losses'],

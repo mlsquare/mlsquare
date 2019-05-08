@@ -52,8 +52,27 @@ class SklearnKerasClassifier(KerasClassifier):
                 return self.model # Not necessary.
             else:
                 # Dont Optmize
-                self.model = self.build_fn.__call__(x_train=x_train)
-                self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
+                primal_model = self.primal
+                primal_model.fit(x_train, y_train)
+                if primal_model.__class__.__name__ is not 'DecisionTreeClassifier':
+                    self.model = self.build_fn.__call__(x_train=x_train)
+                    y_pred = primal_model.predict(x_train)
+                    self.model.fit(x_train, y_pred, epochs=500, batch_size=500, verbose=verbose)
+
+                else:
+                    feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
+                    cuts_per_feature = list(np.zeros(shape=max(feature_index+1), dtype=int))
+
+                    for i,_ in enumerate(cuts_per_feature):
+                        for j,value in enumerate(feature_index):
+                            if i==value:
+                                cuts_per_feature[i] = count[j]
+
+                    units = y_train.shape[1]
+                    self.model = self.build_fn.__call__(x_train=x_train, cuts_per_feature=cuts_per_feature,
+                                                        units=units)
+                    self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
+
                 return self.model # Not necessary.
 
         def save(self, filename = None):
