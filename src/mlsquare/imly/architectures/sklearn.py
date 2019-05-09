@@ -56,7 +56,7 @@ def decision_tree_classifier(**kwargs):
     try:
         from keras.models import Model
         from keras.layers import Input, Dense
-        from ..commons.custom_layers import DecisionTree
+        from ..commons.layers import DecisionTree
 
         model_params = kwargs['model_params']
         kwargs.setdefault('units', kwargs['model_params']['units'])

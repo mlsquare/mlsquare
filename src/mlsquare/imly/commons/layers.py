@@ -137,7 +137,7 @@ class DecisionTree(Layer):
     def binning_fn(self,index_of_feature, num_of_cuts, x, temperature = 0.1):
         from keras import backend as K # Fix
         import tensorflow as tf
-        X = x[:, index_of_feature : index_of_feature + 1]
+        X = x[:, index_of_feature - 1 : index_of_feature]
         D = num_of_cuts
         W = K.reshape(tf.linspace(1.0, D + 1.0, D + 1), [1, -1])
         cutpoints_value = tf.contrib.framework.sort(self._trainable_cutpoints[index_of_feature - 1])
@@ -156,10 +156,9 @@ class DecisionTree(Layer):
       
       bin_result = []
       for i, value in enumerate(self.cuts_per_feature):
-          if value != 0:
-            bin_result.append(
-                self.binning_fn(index_of_feature=i, num_of_cuts=value, x=x)
-            )
+        bin_result.append(
+            self.binning_fn(index_of_feature=i+1, num_of_cuts=value, x=x)
+        )
 
       output = reduce(kron_prod, bin_result)
       self.output_dim = output.get_shape().as_list()

@@ -61,12 +61,25 @@ class SklearnKerasClassifier(KerasClassifier):
 
                 else:
                     feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
-                    cuts_per_feature = list(np.zeros(shape=max(feature_index+1), dtype=int))
+                    cuts_per_feature = np.zeros(shape=x_train.shape[1], dtype=int)
 
-                    for i,_ in enumerate(cuts_per_feature):
-                        for j,value in enumerate(feature_index):
-                            if i==value:
-                                cuts_per_feature[i] = count[j]
+                    cuts_per_feature = [count[j] for i,_ in enumerate(cuts_per_feature)
+                                        for j, value in enumerate(feature_index) if i==value]
+
+                    cuts_per_feature = [1 if value < 1 else np.ceil(x_train.shape[0]) if value > np.ceil(x_train.shape[0]) else count[i]
+                                        for i, value in enumerate(count)]
+
+                    # for i, value in enumerate(cuts_per_feature):
+                    #     if value < 1:
+                    #         cuts_per_feature[i] = 1
+                    #     elif value > np.ceil(x_train.shape[0]):
+                    #         cuts_per_feature[i] = np.ceil(x_train.shape[1]) ## Convert to list comprehension
+                    #     else:
+                    #         cuts_per_feature[i] = count[i]
+                    # for i,_ in enumerate(cuts_per_feature):
+                    #     for j,value in enumerate(feature_index):
+                    #         if i==value:
+                    #             cuts_per_feature[i] = count[j]
 
                     units = y_train.shape[1]
                     self.model = self.build_fn.__call__(x_train=x_train, cuts_per_feature=cuts_per_feature,
@@ -82,7 +95,7 @@ class SklearnKerasClassifier(KerasClassifier):
             pickle.dump(self.model, open(filename + '.pkl', 'wb'))
 
             self.model.save(filename + '.h5')
-            
+
             onnx_model = onnxmltools.convert_keras(self.model)
             onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
@@ -134,7 +147,7 @@ class SklearnKerasRegressor(KerasRegressor):
             pickle.dump(self.model, open(filename + '.pkl', 'wb'))
 
             self.model.save(filename + '.h5')
-            
+
             onnx_model = onnxmltools.convert_keras(self.model)
             onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
@@ -193,7 +206,7 @@ class SklearnTensorflowClassifier():
             #     return self.model # Not necessary.
             # else:
                 # Dont Optmize
-            
+
             self.init_ops, optimizer, loss, self.y_pred, self.x_ph = self.build_fn.__call__(x_train=x_train)
 
             with tf.Session() as sess:
@@ -204,7 +217,7 @@ class SklearnTensorflowClassifier():
                         avg_cost = 0
                         for i in range(total_batch):
                             # batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
-                            _, c = sess.run([optimizer, loss], 
+                            _, c = sess.run([optimizer, loss],
                                             feed_dict={x_ph: x_train, y_ph: y_train})
                             avg_cost += c / total_batch
                         print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost))
@@ -234,7 +247,7 @@ class SklearnTensorflowClassifier():
                 file = open("tf_test.onnx", "wb")
                 file.write(onnx_model.SerializeToString())
                 file.close()
-            
+
             # onnx_model = onnxmltools.convert_keras(self.model)
             # onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
