@@ -121,7 +121,11 @@ class DecisionTree(Layer):
     """
 
     def __init__(self, cuts_per_feature, **kwargs):
-        self.cuts_per_feature = cuts_per_feature
+        self.cuts_per_feature = [1 if i < 1 else int(i) for i in cuts_per_feature]
+        if not all(isinstance(n, int) for n in self.cuts_per_feature):
+            print([type(n) for n in self.cuts_per_feature])
+            print(self.cuts_per_feature)
+            raise ValueError('All elements in `cuts_per_feature` should be of type `int`.')
         super(DecisionTree, self).__init__(**kwargs)
 
     def build(self, input_shape):

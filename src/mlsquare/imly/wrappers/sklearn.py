@@ -20,6 +20,7 @@ class SklearnKerasClassifier(KerasClassifier):
             verbose = kwargs['verbose']
             kwargs.setdefault('params', self.params)
             kwargs.setdefault('space', False)
+            kwargs.setdefault('cuts_per_feature', False)
 
             y_train = np.array(y_train) # Compatibility with all formats?
             if len(y_train.shape) == 2 and y_train.shape[1] > 1:
@@ -60,26 +61,20 @@ class SklearnKerasClassifier(KerasClassifier):
                     self.model.fit(x_train, y_pred, epochs=500, batch_size=500, verbose=verbose)
 
                 else:
-                    feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
-                    cuts_per_feature = np.zeros(shape=x_train.shape[1], dtype=int)
+                    if not kwargs['cuts_per_feature']:
+                        feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
+                        cuts_per_feature = np.zeros(shape=x_train.shape[1], dtype=int)
 
-                    cuts_per_feature = [count[j] for i,_ in enumerate(cuts_per_feature)
-                                        for j, value in enumerate(feature_index) if i==value]
+                        for i, _ in enumerate(cuts_per_feature):
+                            for j, value in enumerate(feature_index):
+                                if i==value:
+                                    cuts_per_feature[i] = count[j]
 
-                    cuts_per_feature = [1 if value < 1 else np.ceil(x_train.shape[0]) if value > np.ceil(x_train.shape[0]) else count[i]
-                                        for i, value in enumerate(count)]
+                        cuts_per_feature = list(cuts_per_feature)
 
-                    # for i, value in enumerate(cuts_per_feature):
-                    #     if value < 1:
-                    #         cuts_per_feature[i] = 1
-                    #     elif value > np.ceil(x_train.shape[0]):
-                    #         cuts_per_feature[i] = np.ceil(x_train.shape[1]) ## Convert to list comprehension
-                    #     else:
-                    #         cuts_per_feature[i] = count[i]
-                    # for i,_ in enumerate(cuts_per_feature):
-                    #     for j,value in enumerate(feature_index):
-                    #         if i==value:
-                    #             cuts_per_feature[i] = count[j]
+                        print("From wrappers -- ", cuts_per_feature)
+                    else:
+                        cuts_per_feature = kwargs['cuts_per_feature']
 
                     units = y_train.shape[1]
                     self.model = self.build_fn.__call__(x_train=x_train, cuts_per_feature=cuts_per_feature,
