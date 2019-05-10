@@ -14,13 +14,14 @@ class SklearnKerasClassifier(KerasClassifier):
             self.params = kwargs['params']
             self.best = kwargs['best']
 
+
         def fit(self, x_train, y_train, **kwargs):
             import numpy as np
             kwargs.setdefault('verbose', 0)
             verbose = kwargs['verbose']
             kwargs.setdefault('params', self.params)
             kwargs.setdefault('space', False)
-
+            
             y_train = np.array(y_train) # Compatibility with all formats?
             if len(y_train.shape) == 2 and y_train.shape[1] > 1:
                 self.classes_ = np.arange(y_train.shape[1])
@@ -44,9 +45,12 @@ class SklearnKerasClassifier(KerasClassifier):
                     'model_name': primal_model.__class__.__name__
                 }
 
+                concrete_model = generic_linear_model().get_model()
+
                 ## Search for best model using Tune ##
-                self.model = get_best_model(x_train, y_train,
+                self.model = get_best_model(x_train, y_train, concrete_model,
                     primal_data=primal_data, params=self.params, space=hyperopt_space)
+                
                 self.model.fit(x_train, y_train, epochs=200,
                             batch_size=30, verbose=verbose) # Not necessary. Fitting twice by now.
                 return self.model # Not necessary.
