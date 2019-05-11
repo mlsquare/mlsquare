@@ -52,7 +52,7 @@ def linear_discriminant_analysis(**kwargs): # Refactor!
         print("keras is required to transpile the model")
         return False
 
-def decision_tree_classifier(**kwargs):
+def cart(**kwargs):
     try:
         from keras.models import Model
         from keras.layers import Input, Dense
@@ -99,5 +99,5 @@ def decision_tree_classifier(**kwargs):
 dispatcher = {
     'glm': generic_linear_model,
     'lda': linear_discriminant_analysis,
-    'dt_classifier': decision_tree_classifier
+    'cart': cart
 }

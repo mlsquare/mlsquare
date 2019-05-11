@@ -19,6 +19,10 @@ def get_best_model(x_train, y_train, **kwargs):
     model_name = kwargs['primal_data']['model_name']
     # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
     mapping_instance = kwargs['build_fn'] # Rename mapping_instance dnn_instance
+    kwargs.setdefault('cuts_per_feature', None)
+    kwargs.setdefault('units', None)
+    cuts_per_feature = kwargs['cuts_per_feature'] 
+    units = kwargs['units']
 
     kwargs.setdefault('space', False)
 
@@ -32,12 +36,19 @@ def get_best_model(x_train, y_train, **kwargs):
             reporter: A function used by Tune to keep a track of the metric by
             which the iterations should be optimized.
         '''
-
-        model = mapping_instance.__call__(x_train=x_train, params=config)
-        model.fit(x_train, y_pred)
+        if model_name != 'DecisionTreeClassifier':
+            print("From Tune __init__ -- ", model_name)
+            model = mapping_instance.__call__(x_train=x_train, params=config)
+            model.fit(x_train, y_pred)
+            accuracy = model.evaluate(x_train, y_pred)[1]
+        else:
+            model = mapping_instance.__call__(x_train=x_train, params=config,
+                                              cuts_per_feature=cuts_per_feature, units=units)
+            model.fit(x_train, y_train)
+            accuracy = model.evaluate(x_train, y_train)[1]
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
-        accuracy = model.evaluate(x_train, y_pred)[1]
+        # 
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
 
     # Define experiment configuration
@@ -70,7 +81,8 @@ def get_best_model(x_train, y_train, **kwargs):
         try:
             print("Creating model...")
             best_model = mapping_instance.__call__(
-                x_train=x_train, params=best_trial.config)  # TODO Pass config as argument
+                x_train=x_train, params=best_trial.config,
+                cuts_per_feature=cuts_per_feature, units=units)  # TODO Pass config as argument
             # best_model = make_model(None)
             weights = os.path.join(
                 best_trial.logdir, best_trial.last_result["checkpoint"])

@@ -6,13 +6,25 @@ from ..optmizers import get_best_model
 import pickle
 import onnxmltools
 
+# Mixing - multi inheritence
+# @abstractclass
+class GetModelAbstract(**kwargs):
+    def get_static_params():
+        pass
+    def get_static_hyperparams():
+        pass
+    def get_static_arch():
+        pass
+    def get_build_fn():
+        pass
 
-class SklearnKerasClassifier(KerasClassifier):
+class SklearnKerasClassifier(KerasClassifier, GetStaticModel):
         def __init__(self, build_fn, **kwargs):
             super(KerasClassifier, self).__init__(build_fn=build_fn)
             self.primal = kwargs['primal']
             self.params = kwargs['params']
             self.best = kwargs['best']
+            print("self.params from __init__ -- ", self.params)
 
         def fit(self, x_train, y_train, **kwargs):
             import numpy as np
@@ -31,14 +43,41 @@ class SklearnKerasClassifier(KerasClassifier):
             else:
                 raise ValueError(
                         'Invalid shape for y_train: ' + str(y_train.shape))
+
+            primal_model = self.primal
+            primal_model.fit(x_train, y_train)
+            if primal_model.__class__.__name__ is not 'DecisionTreeClassifier':
+                self.model = self.build_fn.__call__(x_train=x_train) # Not required when Tune is default.
+                y_pred = primal_model.predict(x_train)
+
+            else:
+                if not kwargs['cuts_per_feature']:
+                    feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
+                    cuts_per_feature = np.zeros(shape=x_train.shape[1], dtype=int)
+
+                    for i, _ in enumerate(cuts_per_feature):
+                        for j, value in enumerate(feature_index):
+                            if i==value:
+                                cuts_per_feature[i] = count[j]
+
+                    cuts_per_feature = list(cuts_per_feature)
+
+                    print("From wrappers -- ", cuts_per_feature)
+
+
+                else:
+                    cuts_per_feature = kwargs['cuts_per_feature']
+
+                units = y_train.shape[1]
+                self.model = self.build_fn.__call__(x_train=x_train, cuts_per_feature=cuts_per_feature,
+                                                    units=units) # Not required when Tune is default.
+            
             # Check whether to compute for the best model or not
-            if (self.best and kwargs['params'] != self.params and kwargs['space']):
+            print("self.params from fit -- ", self.params)
+            if (kwargs['params'] != self.params):
                 # Optimize
                 hyperopt_space = kwargs['space']
-                self.params.update(kwargs['params'])
-
-                primal_model = self.primal
-                primal_model.fit(x_train, y_train)
+                # self.params.update(kwargs['params'])
                 y_pred = primal_model.predict(x_train)
                 primal_data = {
                     'y_pred': y_pred,
@@ -46,41 +85,21 @@ class SklearnKerasClassifier(KerasClassifier):
                 }
 
                 ## Search for best model using Tune ##
-                self.model = get_best_model(x_train, y_train,
-                    primal_data=primal_data, params=self.params, space=hyperopt_space)
-                self.model.fit(x_train, y_train, epochs=200,
-                            batch_size=30, verbose=verbose) # Not necessary. Fitting twice by now.
+                if primal_model.__class__.__name__ is 'DecisionTreeClassifier':
+                    self.model = get_best_model(x_train, y_train,
+                                                primal_data=primal_data, params=kwargs['params'], 
+                                                space=hyperopt_space, cuts_per_feature=cuts_per_feature,
+                                                units=units, build_fn=self.build_fn)
+                else:
+                     self.model = get_best_model(x_train, y_train,
+                                                primal_data=primal_data, params=kwargs['params'], 
+                                                space=hyperopt_space, build_fn=self.build_fn)                   
+                # self.model.fit(x_train, y_train, epochs=200,
+                #             batch_size=30, verbose=verbose) # Not necessary. Fitting twice by now.
                 return self.model # Not necessary.
             else:
                 # Dont Optmize
-                primal_model = self.primal
-                primal_model.fit(x_train, y_train)
-                if primal_model.__class__.__name__ is not 'DecisionTreeClassifier':
-                    self.model = self.build_fn.__call__(x_train=x_train)
-                    y_pred = primal_model.predict(x_train)
-                    self.model.fit(x_train, y_pred, epochs=500, batch_size=500, verbose=verbose)
-
-                else:
-                    if not kwargs['cuts_per_feature']:
-                        feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
-                        cuts_per_feature = np.zeros(shape=x_train.shape[1], dtype=int)
-
-                        for i, _ in enumerate(cuts_per_feature):
-                            for j, value in enumerate(feature_index):
-                                if i==value:
-                                    cuts_per_feature[i] = count[j]
-
-                        cuts_per_feature = list(cuts_per_feature)
-
-                        print("From wrappers -- ", cuts_per_feature)
-                    else:
-                        cuts_per_feature = kwargs['cuts_per_feature']
-
-                    units = y_train.shape[1]
-                    self.model = self.build_fn.__call__(x_train=x_train, cuts_per_feature=cuts_per_feature,
-                                                        units=units)
-                    self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
-
+                self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
                 return self.model # Not necessary.
 
         def save(self, filename = None):
@@ -116,7 +135,7 @@ class SklearnKerasRegressor(KerasRegressor):
                     'model_name': primal_model.__class__.__name__
                 }
 
-                self.model, final_epoch, final_batch_size = get_best_model(
+                self.model, final_epoch, final_batch_size = get_best_model( # Fix! Returns only `model`
                     x_train, y_train, primal_data=primal_data,
                     params=self.params, build_fn=self.build_fn)
                 # Epochs and batch_size passed in Talos as well
@@ -145,107 +164,6 @@ class SklearnKerasRegressor(KerasRegressor):
 
             onnx_model = onnxmltools.convert_keras(self.model)
             onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
-
-
-class SklearnTensorflowClassifier():
-        def __init__(self, build_fn, **kwargs):
-            self.build_fn = build_fn
-            self.primal = kwargs['primal']
-            self.params = kwargs['params']
-            self.best = kwargs['best']
-
-        def score(self, x, y):
-           import numpy as np
-           # TODO
-           # Fix the access flow of y_pred and x_ph
-           return np.mean(np.argmax(self.y_pred.eval(feed_dict={self.x_ph: x}), axis=1) == np.argmax(y, axis=1))
-
-        def fit(self, x_train, y_train, **kwargs):
-            import numpy as np
-            import tensorflow as tf
-            kwargs.setdefault('batch_size', 500)
-            kwargs.setdefault('epochs', 500)
-            kwargs.setdefault('verbose', 0)
-            verbose = kwargs['verbose']
-            kwargs.setdefault('params', self.params)
-            kwargs.setdefault('space', False)
-
-            y_train = np.array(y_train) # Compatibility with all formats?
-            if len(y_train.shape) == 2 and y_train.shape[1] > 1:
-                self.classes_ = np.arange(y_train.shape[1])
-            elif (len(y_train.shape) == 2 and y_train.shape[1] == 1) or len(y_train.shape) == 1:
-                self.classes_ = np.unique(y_train)
-                y_train = np.searchsorted(self.classes_, y_train)
-            else:
-                raise ValueError(
-                        'Invalid shape for y_train: ' + str(y_train.shape))
-            # Check whether to compute for the best model or not
-            # if (self.best and kwargs['params'] != self.params and kwargs['space']):
-            #     # Optimize
-            #     hyperopt_space = kwargs['space']
-            #     self.params.update(kwargs['params'])
-
-            #     primal_model = self.primal
-            #     primal_model.fit(x_train, y_train)
-            #     y_pred = primal_model.predict(x_train)
-            #     primal_data = {
-            #         'y_pred': y_pred,
-            #         'model_name': primal_model.__class__.__name__
-            #     }
-
-            #     ## Search for best model using Tune ##
-            #     self.model = get_best_model(x_train, y_train,
-            #         primal_data=primal_data, params=self.params, space=hyperopt_space)
-            #     self.model.fit(x_train, y_train, epochs=200,
-            #                 batch_size=30, verbose=verbose) # Not necessary. Fitting twice by now.
-            #     return self.model # Not necessary.
-            # else:
-                # Dont Optmize
-
-            self.init_ops, optimizer, loss, self.y_pred, self.x_ph = self.build_fn.__call__(x_train=x_train)
-
-            with tf.Session() as sess:
-                # initialise the variables
-                sess.run(self.init_ops)
-                total_batch = int(len(y_train) / kwargs['batch_size'])
-                for epoch in range(kwargs['epochs']):
-                        avg_cost = 0
-                        for i in range(total_batch):
-                            # batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
-                            _, c = sess.run([optimizer, loss],
-                                            feed_dict={x_ph: x_train, y_ph: y_train})
-                            avg_cost += c / total_batch
-                        print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost))
-                # print(sess.run(accuracy, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
-
-            # self.model.fit(x_train, y_train, epochs=500, batch_size=500, verbose=verbose)
-            # return self.model # Not necessary.
-
-        # TODO
-        # Batch split while training
-        # Placeholders for x and y
-
-        def save(self, filename = None):
-            if filename == None:
-                raise ValueError('Name Error: to save the model you need to specify the filename')
-
-            import tensorflow as tf
-            from onnx_tf.frontend import tensorflow_graph_to_onnx_model
-
-            with tf.gfile.GFile("frozen_graph.pb", "rb") as f:
-                graph_def = tf.GraphDef()
-                graph_def.ParseFromString(f.read())
-                onnx_model = tensorflow_graph_to_onnx_model(graph_def,
-                                                "fc2/add",
-                                                opset=6)
-
-                file = open("tf_test.onnx", "wb")
-                file.write(onnx_model.SerializeToString())
-                file.close()
-
-            # onnx_model = onnxmltools.convert_keras(self.model)
-            # onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
-
 
 wrappers = {
     'LogisticRegression': SklearnKerasClassifier,

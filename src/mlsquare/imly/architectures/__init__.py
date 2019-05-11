@@ -9,8 +9,11 @@ class ModelMiddleware:
         self.x_train = None
 
     def __call__(self, **kwargs):
+        kwargs.setdefault('params', False)
+        if kwargs['params']:
+            self.params.update(kwargs['params'])
         try:
-            if self.fn.__name__ is not 'decision_tree_classifier':
+            if self.fn.__name__ is not 'cart':
                 model = self.fn(model_params=self.params, x_train=kwargs['x_train'])
             else:
                 model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
@@ -52,3 +55,8 @@ def _get_architecture(module, model_name):
         return dispatcher[model_architecture['model_skeleton'][model_name]], model_architecture['model_param'][model_name]
     else:
         return None, None
+
+
+def _update_architecture():
+    
+    pass
