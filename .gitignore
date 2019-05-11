@@ -52,3 +52,5 @@ tests/test_sh.py
 *.pkl
 *.h5
 *.onnx
+src/experiments_imlyV0_1_1.ipynb
+src/test_file.py
