@@ -7,24 +7,41 @@
 # seed(3)
 # set_random_seed(3)
 
-class generic_linear_model(CreateModelObject):
+from ..wrappers.base import AbstractModelClass
+
+class generic_linear_model(AbstractModelClass):
+
+    def __init__(self, module, model_name):
+        self.module = module
+        self.model_name = model_name
+        self.dynamic_params = None
+
     
     def get_static_params(self):
+        from . import _check_model_availabiltiy
+
+        model_architecture, static_params = _check_model_availabiltiy(self.module, self.model_name)
+        # self.static_model = ModelMiddleware(fn=model_architecture,
+        #                                     params=static_params)
+        return static_params
+
+    def get_static_arch(self): # Purpose?
         pass
 
-    def get_static_arch(self):
-        pass
+    def set_dynamic_params(self, params):
+        self.dynamic_params = params
 
     def get_dynamic_params(self):
-        pass
+        return self.dynamic_params
 
-    def get_dynamic_arch(self):
+    def get_dynamic_arch(self): # Purpose?
         pass
 
     def get_model(self):
         try:
             params = self.get_static_params()
-            params = self.get_static_params()
+            if self.dynamic_params is not None:
+                params.update(self.dynamic_params)
             
             from keras.models import Sequential
             from keras.layers.core import Dense

@@ -56,38 +56,47 @@ def dope(model, **kwargs):
 
             # Get the model architecture and params
             # If None return primal
-            from .architectures import ModelMiddleware, _get_architecture
-            model_architecture, model_params = _get_architecture(
+            from .architectures import ModelMiddleware, _check_model_availabiltiy
+            # Shift to get_static_params() in ModelClass
+            model_architecture, static_params = _check_model_availabiltiy(
                 module, model_name)
-            if model_architecture and model_params:
-                build_fn = ModelMiddleware(fn=model_architecture,
-                                           params=model_params,
-                                           primal=primal)
+
+            if model_architecture and static_params:
+                # build_fn = ModelMiddleware(fn=model_architecture,
+                #                            params=model_params,
+                #                            primal=primal)
+                from .architectures.sklearn import generic_linear_model # This import should be dynamic
+                static_model = generic_linear_model(module=module, model_name=model_name)
+
+                # Get the model wrapper class
+                # If None return primal
+                from .wrappers import _get_wrapper_class
+                wrapper_class = _get_wrapper_class(module, model_name)
+                if wrapper_class:
+                    final_model = wrapper_class(static_model=static_model, params=None,
+                                                primal=primal, # Remove this arg, access it from static model.
+                                                best=kwargs['best'])
+                    return final_model
+                else:
+                    print("Unable to find a relevent wrapper function for the model you provided.\
+                        Hence, returning the model without transpiling.")
+                    return primal
+
             else:
                 print("Unable to find a relevent dnn model architecture for the model you provided.\
                     Hence, returning the model without transpiling.")
                 return primal
 
-            # Get the model wrapper class
-            # If None return primal
-            from .wrappers import _get_wrapper_class
-            wrapper_class = _get_wrapper_class(module, model_name)
-            if wrapper_class:
-                model = wrapper_class(build_fn=build_fn, params=None,
-                                      primal=primal,
-                                      best=kwargs['best'])
-            else:
-                print("Unable to find a relevent wrapper function for the model you provided.\
-                    Hence, returning the model without transpiling.")
-                return primal
-
             # Return the model as it is if required modules are not installed
-            if not model:
-                print("Returning the model without transpiling since the required modules \
-                were not installed.")
-                return primal
 
-            return model
+            ## Right way to handle the error?
+
+            # if not model: 
+            #     print("Returning the model without transpiling since the required modules \
+            #     were not installed.")
+            #     return primal
+
+            # return model
         else:
             print("%s from the package %s is not yet supported" %
                   (model_name, module))

@@ -16,7 +16,7 @@ class ModelMiddleware:
             return False
 
 
-def _get_architecture(module, model_name):
+def _check_model_availabiltiy(module, model_name):
     """
     Given a model name, it returns the skeleton and params
 

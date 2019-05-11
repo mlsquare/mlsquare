@@ -9,7 +9,9 @@ import onnxmltools
 
 class SklearnKerasClassifier(KerasClassifier):
         def __init__(self, build_fn, **kwargs):
+            # How do we replace `build_fn` required by keras_wrapper?
             super(KerasClassifier, self).__init__(build_fn=build_fn)
+            self.static_model = kwargs['static_model']
             self.primal = kwargs['primal']
             self.params = kwargs['params']
             self.best = kwargs['best']
@@ -45,10 +47,12 @@ class SklearnKerasClassifier(KerasClassifier):
                     'model_name': primal_model.__class__.__name__
                 }
 
-                concrete_model = generic_linear_model().get_model()
+                if self.params is not None:
+                    self.static_model.set_dynamic_params(self.params)
+                # concrete_model = self.static_model.get_model()
 
                 ## Search for best model using Tune ##
-                self.model = get_best_model(x_train, y_train, concrete_model,
+                self.model = get_best_model(x_train, y_train, self.static_model,
                     primal_data=primal_data, params=self.params, space=hyperopt_space)
                 
                 self.model.fit(x_train, y_train, epochs=200,
