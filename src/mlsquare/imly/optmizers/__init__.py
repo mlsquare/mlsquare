@@ -34,7 +34,7 @@ def get_best_model(x_train, y_train, **kwargs):
         '''
 
         model = mapping_instance.__call__(x_train=x_train, params=config)
-        model.fit(x_train, y_pred)
+        model.fit(x_train, y_pred, epochs=250, batch_size=50)
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
         accuracy = model.evaluate(x_train, y_pred)[1]
