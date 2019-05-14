@@ -37,7 +37,7 @@ class SklearnKerasClassifier(KerasClassifier):
         y_pred = primal_model.predict(x_train)
         # This check is temporary. This will be moved to 'AbstractModelClass' after
         # the Architectural refactoring is done.
-        if primal_model.__class__.__name__ is 'LinearSVC':
+        if primal_model.__class__.__name__ in ('LinearSVC', 'SVC'):
             y_pred[where(y_pred == 0)] = -1
 
         primal_data = {
@@ -131,5 +131,6 @@ wrappers = {
     'LogisticRegression': SklearnKerasClassifier,
     'LinearRegression': SklearnKerasRegressor,
     'LinearDiscriminantAnalysis': SklearnKerasClassifier,
-    'LinearSVC': SklearnKerasClassifier
+    'LinearSVC': SklearnKerasClassifier,
+    'SVC': SklearnKerasClassifier
 }
