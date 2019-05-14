@@ -57,8 +57,7 @@ def dope(model, **kwargs):
             # Get the model architecture and params
             # If None return primal
             from .architectures import ModelMiddleware, _get_architecture
-            model_architecture, model_params = _get_architecture(
-                module, model_name)
+            model_architecture, model_params = _get_architecture(module, model_name)
             if model_architecture and model_params:
                 build_fn = ModelMiddleware(fn=model_architecture,
                                            params=model_params,

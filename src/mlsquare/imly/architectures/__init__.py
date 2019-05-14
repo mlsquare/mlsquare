@@ -15,7 +15,8 @@ class ModelMiddleware:
             kwargs.setdefault('params', self.params)
             if kwargs['params'] != self.params:
                 self.params.update(kwargs['params'])
-            model = self.fn(model_params=self.params, x_train=kwargs['x_train'])
+            model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
+                            y_train=kwargs['y_train'])
             return model
         except KeyError:
             return False

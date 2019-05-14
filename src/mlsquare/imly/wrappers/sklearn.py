@@ -6,6 +6,7 @@ from ..optmizers import get_best_model
 import pickle
 import onnxmltools
 from numpy import where
+from sklearn.preprocessing import OneHotEncoder
 
 
 class SklearnKerasClassifier(KerasClassifier):
@@ -14,6 +15,7 @@ class SklearnKerasClassifier(KerasClassifier):
         self.primal = kwargs['primal']
         self.params = kwargs['params']
         self.best = kwargs['best']
+        self.enc = None
 
     def fit(self, x_train, y_train, **kwargs):
         import numpy as np
@@ -38,7 +40,9 @@ class SklearnKerasClassifier(KerasClassifier):
         # This check is temporary. This will be moved to 'AbstractModelClass' after
         # the Architectural refactoring is done.
         if primal_model.__class__.__name__ in ('LinearSVC', 'SVC'):
-            y_pred[where(y_pred == 0)] = -1
+            self.enc = OneHotEncoder(handle_unknown='ignore')
+            self.enc.fit(y_train)
+            y_pred = self.enc.transform(y_pred.reshape([-1, 1]))
 
         primal_data = {
             'y_pred': y_pred,
@@ -73,6 +77,16 @@ class SklearnKerasClassifier(KerasClassifier):
 
         onnx_model = onnxmltools.convert_keras(self.model)
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
+
+    ## Temporary hack. This should be handled during architectural refactoring.
+    def score(self, x, y, **kwargs):
+        if self.enc is not None:
+            y = self.enc.transform(y)
+            self.y_out = y
+
+        score = self.model.evaluate(x, y, **kwargs)
+        return score
+
 
 
 class SklearnKerasRegressor(KerasRegressor):

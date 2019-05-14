@@ -13,9 +13,12 @@ def generic_linear_model(**kwargs):
         from keras.models import Sequential
         from keras.layers.core import Dense
 
+        ## Temporary hack. Needs to be fixed during architectural refactoring.
+        kwargs.setdefault('y_train', None)
+
         model_params = kwargs['model_params']
         model = Sequential()
-        model.add(Dense(model_params['units'],
+        model.add(Dense(kwargs['y_train'].shape[1],
                         input_dim=kwargs['x_train'].shape[1],
                         activation=model_params['activation']))
         model.compile(optimizer=model_params['optimizer'],
