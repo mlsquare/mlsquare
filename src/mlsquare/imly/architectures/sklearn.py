@@ -12,15 +12,21 @@ def glm(**kwargs): # Change to glm
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
+        from keras.regularizers import l2
 
         ## Temporary hack. Needs to be fixed during architectural refactoring.
         kwargs.setdefault('y_train', None)
+        if len(kwargs['y_train'].shape) == 1: # Can be delegated to wrappers
+            units = 1
+        else:
+            units = kwargs['y_train'].shape[1]
 
         model_params = kwargs['model_params']
         model = Sequential()
-        model.add(Dense(kwargs['y_train'].shape[1],
+        model.add(Dense(units,
                         input_dim=kwargs['x_train'].shape[1],
-                        activation=model_params['activation']))
+                        activation=model_params['activation'],
+                        kernel_regularizer=l2(model_params['kernel_regularizer_value'])))
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['losses'],
                       metrics=['accuracy'])
