@@ -8,7 +8,7 @@
 # set_random_seed(3)
 
 
-def generic_linear_model(**kwargs):
+def glm(**kwargs): # Change to glm
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
@@ -56,7 +56,7 @@ def linear_discriminant_analysis(**kwargs):
         print("keras is required to transpile the model")
         return False
 
-def kernel_svm(**kwargs):
+def kernel_glm(**kwargs): # Update in config
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
@@ -69,12 +69,11 @@ def kernel_svm(**kwargs):
         model.add(Dense(kwargs['y_train'].shape[1],
                         input_dim=kwargs['x_train'].shape[1],
                         activation=model_params['activation']))
-        model.add(Dense(kwargs['rbf_units'],
-                        trainable=False, kernel_initializer='random_uniform',
+        model.add(Dense(model_params['kernel_dim'], # kernel dimensions - hyperparams
+                        trainable=False, kernel_initializer='random_normal', # Check for random_normal - for rbf
                         activation=model_params['activation']))
         model.add(Dense(kwargs['y_train'].shape[1],
-                        activation='softmax',
-                        trainable=False))
+                        activation='softmax'))
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['losses'],
                       metrics=['accuracy'])
@@ -86,7 +85,7 @@ def kernel_svm(**kwargs):
 
 
 dispatcher = {
-    'glm': generic_linear_model,
+    'glm': glm,
     'lda': linear_discriminant_analysis,
-    'rbf': kernel_svm
+    'rbf': kernel_glm
 }

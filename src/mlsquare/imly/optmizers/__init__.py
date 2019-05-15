@@ -34,7 +34,7 @@ def get_best_model(x_train, y_train, **kwargs):
         '''
 
         model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
-        model.fit(x_train, y_pred, epochs=250, batch_size=50)
+        model.fit(x_train, y_pred, epochs=250, batch_size=50) # Epochs should be configurable
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
         accuracy = model.evaluate(x_train, y_pred)[1]
@@ -91,6 +91,6 @@ def get_sorted_trials(trial_list, metric):
     return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0), reverse=True)
 
 # TODO
-# Generalize metric choice.
-# Add compatibility for linReg and LDA.
+# Looks like the get_sorted_trials function is behaving at times.
+# It returns the "worst" model instead of the "best". Check why this happens.
 # Validate the loaded model(How?).
