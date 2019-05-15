@@ -100,7 +100,7 @@ class SklearnKerasRegressor(KerasRegressor):
         # Check whether to compute for the best model or not
         kwargs.setdefault('verbose', 0)
         verbose = kwargs['verbose']
-        if (self.best and self.params != None):
+        if (kwargs['params'] != self.params):
             # Optimize
             primal_model = self.primal
             primal_model.fit(x_train, y_train)
@@ -110,12 +110,8 @@ class SklearnKerasRegressor(KerasRegressor):
                 'model_name': primal_model.__class__.__name__
             }
 
-            self.model, final_epoch, final_batch_size = get_best_model(
-                x_train, y_train, primal_data=primal_data,
-                params=self.params, build_fn=self.build_fn)
-            # Epochs and batch_size passed in Talos as well
-            self.model.fit(x_train, y_train, epochs=final_epoch,
-                           batch_size=final_batch_size, verbose=verbose)
+            self.model = get_best_model(x_train, y_train, primal_data=primal_data,
+                                        params=kwargs['params'], build_fn=self.build_fn)
             return self.model
         else:
             # Dont Optmize
@@ -146,5 +142,6 @@ wrappers = {
     'LinearRegression': SklearnKerasRegressor,
     'LinearDiscriminantAnalysis': SklearnKerasClassifier,
     'LinearSVC': SklearnKerasClassifier,
-    'SVC': SklearnKerasClassifier
+    'SVC': SklearnKerasClassifier,
+    'Ridge': SklearnKerasRegressor
 }
