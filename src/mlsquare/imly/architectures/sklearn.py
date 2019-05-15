@@ -56,8 +56,37 @@ def linear_discriminant_analysis(**kwargs):
         print("keras is required to transpile the model")
         return False
 
+def kernel_svm(**kwargs):
+    try:
+        from keras.models import Sequential
+        from keras.layers.core import Dense
+
+        ## Temporary hack. Needs to be fixed during architectural refactoring.
+        kwargs.setdefault('y_train', None)
+
+        model_params = kwargs['model_params']
+        model = Sequential()
+        model.add(Dense(kwargs['y_train'].shape[1],
+                        input_dim=kwargs['x_train'].shape[1],
+                        activation=model_params['activation']))
+        model.add(Dense(kwargs['rbf_units'],
+                        trainable=False, kernel_initializer='random_uniform',
+                        activation=model_params['activation']))
+        model.add(Dense(kwargs['y_train'].shape[1],
+                        activation='softmax',
+                        trainable=False))
+        model.compile(optimizer=model_params['optimizer'],
+                      loss=model_params['losses'],
+                      metrics=['accuracy'])
+
+        return model
+    except ImportError:
+        print ("keras is required to transpile the model")
+        return False
+
 
 dispatcher = {
     'glm': generic_linear_model,
-    'lda': linear_discriminant_analysis
+    'lda': linear_discriminant_analysis,
+    'rbf': kernel_svm
 }
