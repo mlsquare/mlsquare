@@ -6,19 +6,7 @@ from ..optmizers import get_best_model
 import pickle
 import onnxmltools
 
-# Mixing - multi inheritence
-# @abstractclass
-class GetModelAbstract(**kwargs):
-    def get_static_params():
-        pass
-    def get_static_hyperparams():
-        pass
-    def get_static_arch():
-        pass
-    def get_build_fn():
-        pass
-
-class SklearnKerasClassifier(KerasClassifier, GetStaticModel):
+class SklearnKerasClassifier(KerasClassifier):
         def __init__(self, build_fn, **kwargs):
             super(KerasClassifier, self).__init__(build_fn=build_fn)
             self.primal = kwargs['primal']
