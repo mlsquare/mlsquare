@@ -143,5 +143,7 @@ wrappers = {
     'LinearDiscriminantAnalysis': SklearnKerasClassifier,
     'LinearSVC': SklearnKerasClassifier,
     'SVC': SklearnKerasClassifier,
-    'Ridge': SklearnKerasRegressor
+    'Ridge': SklearnKerasRegressor,
+    'Lasso': SklearnKerasRegressor,
+    'ElasticNet': SklearnKerasRegressor
 }
