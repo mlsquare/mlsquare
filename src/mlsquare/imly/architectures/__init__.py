@@ -10,13 +10,7 @@ class ModelMiddleware:
 
     def __call__(self, **kwargs):
         try:
-            # This check is temporary. This will be moved to 'AbstractModelClass' after
-            # the Architectural refactoring is done.            
-            kwargs.setdefault('params', self.params)
-            if kwargs['params'] != self.params:
-                self.params.update(kwargs['params'])
-            model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
-                            y_train=kwargs['y_train'])
+            model = self.fn(model_params=self.params, x_train=kwargs['x_train'])
             return model
         except KeyError:
             return False
