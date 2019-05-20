@@ -12,7 +12,7 @@ def glm(**kwargs): # Change to glm
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
-        from keras.regularizers import l2
+        from keras.regularizers import l1_l2
 
         ## Temporary hack. Needs to be fixed during architectural refactoring.
         kwargs.setdefault('y_train', None)
@@ -26,7 +26,7 @@ def glm(**kwargs): # Change to glm
         model.add(Dense(units,
                         input_dim=kwargs['x_train'].shape[1],
                         activation=model_params['activation'],
-                        kernel_regularizer=l2(model_params['kernel_regularizer_value'])))
+                        kernel_regularizer=l1_l2(l1=model_params['l1'], l2=model_params['l2']))) # Update as l1() for lasso
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['losses'],
                       metrics=['accuracy'])
