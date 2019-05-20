@@ -8,25 +8,16 @@
 # set_random_seed(3)
 
 
-def glm(**kwargs): # Change to glm
+def generic_linear_model(**kwargs):
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
-        from keras.regularizers import l1_l2
-
-        ## Temporary hack. Needs to be fixed during architectural refactoring.
-        kwargs.setdefault('y_train', None)
-        if len(kwargs['y_train'].shape) == 1: # Can be delegated to wrappers
-            units = 1
-        else:
-            units = kwargs['y_train'].shape[1]
 
         model_params = kwargs['model_params']
         model = Sequential()
-        model.add(Dense(units,
+        model.add(Dense(model_params['units'],
                         input_dim=kwargs['x_train'].shape[1],
-                        activation=model_params['activation'],
-                        kernel_regularizer=l1_l2(l1=model_params['l1'], l2=model_params['l2']))) # Update as l1() for lasso
+                        activation=model_params['activation']))
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['losses'],
                       metrics=['accuracy'])
@@ -62,36 +53,8 @@ def linear_discriminant_analysis(**kwargs):
         print("keras is required to transpile the model")
         return False
 
-def kernel_glm(**kwargs): # Update in config
-    try:
-        from keras.models import Sequential
-        from keras.layers.core import Dense
-
-        ## Temporary hack. Needs to be fixed during architectural refactoring.
-        kwargs.setdefault('y_train', None)
-
-        model_params = kwargs['model_params']
-        model = Sequential()
-        model.add(Dense(kwargs['y_train'].shape[1],
-                        input_dim=kwargs['x_train'].shape[1],
-                        activation=model_params['activation']))
-        model.add(Dense(model_params['kernel_dim'], # kernel dimensions - hyperparams
-                        trainable=False, kernel_initializer='random_normal', # Check for random_normal - for rbf
-                        activation=model_params['activation']))
-        model.add(Dense(kwargs['y_train'].shape[1],
-                        activation='softmax'))
-        model.compile(optimizer=model_params['optimizer'],
-                      loss=model_params['losses'],
-                      metrics=['accuracy'])
-
-        return model
-    except ImportError:
-        print ("keras is required to transpile the model")
-        return False
-
 
 dispatcher = {
-    'glm': glm,
-    'lda': linear_discriminant_analysis,
-    'rbf': kernel_glm
+    'glm': generic_linear_model,
+    'lda': linear_discriminant_analysis
 }
