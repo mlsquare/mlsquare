@@ -32,7 +32,7 @@ def dope(model, **kwargs):
 
     # Set the default values for the arguments
     kwargs.setdefault('using', 'dnn')
-    kwargs.setdefault('best', True)
+    kwargs.setdefault('best', True) # Remove. Optimization should happen by default.
 
     if (kwargs['using'] == None):
         return model
@@ -57,8 +57,14 @@ def dope(model, **kwargs):
             # Get the model architecture and params
             # If None return primal
             from .architectures import ModelMiddleware, _get_architecture
-            model_architecture, model_params = _get_architecture(
-                module, model_name)
+            # This check should be moved to wrappers. The model_arch should get 
+            # updated at that level.
+            if model_name is 'SVC':
+                if primal.get_params()['kernel'] is 'linear':
+                    model_name = 'LinearSVC'
+                elif primal.get_params()['kernel'] is not 'rbf':
+                    raise ValueError('{} kernel is not supported by IMLY right now'.format(primal.get_params()['kernel']))
+            model_architecture, model_params = _get_architecture(module, model_name)
             if model_architecture and model_params:
                 build_fn = ModelMiddleware(fn=model_architecture,
                                            params=model_params,
