@@ -16,13 +16,13 @@ ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_st
 
 def get_best_model(x_train, y_train, **kwargs):
     y_pred = kwargs['primal_data']['y_pred']
-    model_name = kwargs['primal_data']['model_name']
+    # model_name = kwargs['primal_data']['model_name']
     # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
     mapping_instance = kwargs['build_fn'] # Rename mapping_instance dnn_instance
     kwargs.setdefault('cuts_per_feature', None)
     kwargs.setdefault('units', None)
-    cuts_per_feature = kwargs['cuts_per_feature'] 
-    units = kwargs['units']
+    # cuts_per_feature = kwargs['cuts_per_feature'] 
+    # units = kwargs['units']
 
     kwargs.setdefault('space', False)
 
@@ -36,16 +36,10 @@ def get_best_model(x_train, y_train, **kwargs):
             reporter: A function used by Tune to keep a track of the metric by
             which the iterations should be optimized.
         '''
-        if model_name != 'DecisionTreeClassifier':
-            print("From Tune __init__ -- ", model_name)
-            model = mapping_instance.__call__(x_train=x_train, params=config)
-            model.fit(x_train, y_pred)
-            accuracy = model.evaluate(x_train, y_pred)[1]
-        else:
-            model = mapping_instance.__call__(x_train=x_train, params=config,
-                                              cuts_per_feature=cuts_per_feature, units=units)
-            model.fit(x_train, y_train)
-            accuracy = model.evaluate(x_train, y_train)[1]
+
+        model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
+        model.fit(x_train, y_pred, epochs=250, batch_size=50) # Epochs should be configurable
+        accuracy = model.evaluate(x_train, y_train)[1]
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
         # 
@@ -80,9 +74,11 @@ def get_best_model(x_train, y_train, **kwargs):
     for best_trial in sorted_trials:
         try:
             print("Creating model...")
-            best_model = mapping_instance.__call__(
-                x_train=x_train, params=best_trial.config,
-                cuts_per_feature=cuts_per_feature, units=units)  # TODO Pass config as argument
+            # best_model = mapping_instance.__call__(x_train=x_train, params=best_trial.config,
+            #                                         cuts_per_feature=cuts_per_feature, units=units)
+
+            best_model = mapping_instance.__call__(x_train=x_train, y_train=y_pred,
+                                                    params=best_trial.config)  # TODO Pass config as argument
             # best_model = make_model(None)
             weights = os.path.join(
                 best_trial.logdir, best_trial.last_result["checkpoint"])
@@ -103,6 +99,6 @@ def get_sorted_trials(trial_list, metric):
     return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0), reverse=True)
 
 # TODO
-# Generalize metric choice.
-# Add compatibility for linReg and LDA.
+# Looks like the get_sorted_trials function is behaving at times.
+# It returns the "worst" model instead of the "best". Check why this happens.
 # Validate the loaded model(How?).

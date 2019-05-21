@@ -13,11 +13,14 @@ class ModelMiddleware:
         if kwargs['params']:
             self.params.update(kwargs['params'])
         try:
-            if self.fn.__name__ is not 'cart':
-                model = self.fn(model_params=self.params, x_train=kwargs['x_train'])
-            else:
-                model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
-                                cuts_per_feature=kwargs['cuts_per_feature'], units=kwargs['units'])
+            # This check is temporary. This will be moved to 'AbstractModelClass' after
+            # the Architectural refactoring is done.            
+            kwargs.setdefault('params', self.params)
+            if kwargs['params'] != self.params:
+                self.params.update(kwargs['params'])
+            # 'model_params' -- Change name. Creating a lot of confusion!
+            model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
+                            y_train=kwargs['y_train'])
             return model
         except KeyError as e:
             raise KeyError('Missing argument {} while creating model. '.format(e))
