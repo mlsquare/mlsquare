@@ -23,6 +23,7 @@ class SklearnKerasClassifier(KerasClassifier):
         kwargs.setdefault('params', self.params)
         # Update as kwargs.setdefault('params', {})
         kwargs.setdefault('space', False)
+        kwargs.setdefault('cuts_per_feature', False)
 
         y_train = np.array(y_train)  # Compatibility with all formats?
         if len(y_train.shape) == 2 and y_train.shape[1] > 1:
