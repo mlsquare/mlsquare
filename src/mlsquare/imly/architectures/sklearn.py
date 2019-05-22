@@ -37,7 +37,7 @@ def glm(**kwargs): # Change to glm
         return False
 
 
-def linear_discriminant_analysis(**kwargs):
+def linear_discriminant_analysis(**kwargs): # Refactor!
     try:
         from keras.models import Sequential
         from keras.layers.core import Dense
@@ -61,6 +61,52 @@ def linear_discriminant_analysis(**kwargs):
     except ImportError:
         print("keras is required to transpile the model")
         return False
+
+def cart(**kwargs):
+    try:
+        from keras.models import Model
+        from keras.layers import Input, Dense
+        import numpy as np
+        from ..commons.layers import DecisionTree
+
+        ## This validation is not moved to the DT Layer since x_train.shape[0] is not
+        ## available at that level.
+
+        cuts_per_feature = kwargs['model_params']['cuts_per_feature'] 
+        # Update to kwargs['model_params']['cuts_per_feature']
+        if type(cuts_per_feature) not in (list, int):
+            raise TypeError('cuts_per_feature should be of type `list` or `int`')
+        elif type(cuts_per_feature) is int:
+            if cuts_per_feature > np.ceil(kwargs['x_train'].shape[0]):
+                cuts_per_feature = [np.ceil(kwargs['x_train'].shape[0]) for i in range(kwargs['x_train'].shape[1])]
+            else:
+                cuts_per_feature = [cuts_per_feature for i in range(kwargs['x_train'].shape[1])]
+        else:
+            if len(cuts_per_feature) != kwargs['x_train'].shape[1]:
+                print("From arch -- ",cuts_per_feature)
+                raise ValueError('The length of `cuts_per_feature` should be equal to number of features.')
+            else:
+                cuts_per_feature = [np.ceil(kwargs['x_train'].shape[0]) 
+                                    if i > np.ceil(kwargs['x_train'].shape[0]) else i for i in cuts_per_feature]
+
+
+        model_params = kwargs['model_params']
+        kwargs.setdefault('units', kwargs['model_params']['units'])
+        visible = Input(shape=(kwargs['x_train'].shape[1],))
+        # hidden = DecisionTree(cuts_per_feature=kwargs['cuts_per_feature'])(visible)
+        hidden = DecisionTree(cuts_per_feature=cuts_per_feature)(visible)
+        output = Dense(kwargs['units'], activation=model_params['activation'])(hidden)
+        model = Model(inputs=visible, outputs=output)
+
+        model.compile(optimizer=model_params['optimizer'],
+                loss=model_params['losses'],
+                metrics=['accuracy'])
+
+        return model
+    except ImportError:
+        print("keras is required to transpile the model")
+        return False # Raise error instead of returning False. False doesn't help much while debugging.
+
 
 def kernel_glm(**kwargs): # Update in config
     try:
@@ -93,5 +139,6 @@ def kernel_glm(**kwargs): # Update in config
 dispatcher = {
     'glm': glm,
     'lda': linear_discriminant_analysis,
-    'rbf': kernel_glm
+    'rbf': kernel_glm,
+    'cart': cart
 }

@@ -16,9 +16,13 @@ ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_st
 
 def get_best_model(x_train, y_train, **kwargs):
     y_pred = kwargs['primal_data']['y_pred']
-    model_name = kwargs['primal_data']['model_name']
+    # model_name = kwargs['primal_data']['model_name']
     # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
     mapping_instance = kwargs['build_fn'] # Rename mapping_instance dnn_instance
+    kwargs.setdefault('cuts_per_feature', None)
+    kwargs.setdefault('units', None)
+    # cuts_per_feature = kwargs['cuts_per_feature'] 
+    # units = kwargs['units']
 
     kwargs.setdefault('space', False)
 
@@ -32,12 +36,13 @@ def get_best_model(x_train, y_train, **kwargs):
             reporter: A function used by Tune to keep a track of the metric by
             which the iterations should be optimized.
         '''
-
+        ## IMP - the y_train for DT should be actual y_train and not y_pred.
+        ## As per current implementation it takes y_pred
         model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
         model.fit(x_train, y_pred, epochs=250, batch_size=50) # Epochs should be configurable
+        accuracy = model.evaluate(x_train, y_pred)[1] # Cross check - y_train or y_pred?
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
-        accuracy = model.evaluate(x_train, y_pred)[1]
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
 
     # Define experiment configuration
@@ -69,6 +74,9 @@ def get_best_model(x_train, y_train, **kwargs):
     for best_trial in sorted_trials:
         try:
             print("Creating model...")
+            # best_model = mapping_instance.__call__(x_train=x_train, params=best_trial.config,
+            #                                         cuts_per_feature=cuts_per_feature, units=units)
+
             best_model = mapping_instance.__call__(x_train=x_train, y_train=y_pred,
                                                     params=best_trial.config)  # TODO Pass config as argument
             # best_model = make_model(None)

@@ -9,17 +9,21 @@ class ModelMiddleware:
         self.x_train = None
 
     def __call__(self, **kwargs):
+        kwargs.setdefault('params', False)
+        if kwargs['params']:
+            self.params.update(kwargs['params'])
         try:
             # This check is temporary. This will be moved to 'AbstractModelClass' after
             # the Architectural refactoring is done.            
             kwargs.setdefault('params', self.params)
             if kwargs['params'] != self.params:
                 self.params.update(kwargs['params'])
+            # 'model_params' -- Change name. Creating a lot of confusion!
             model = self.fn(model_params=self.params, x_train=kwargs['x_train'],
                             y_train=kwargs['y_train'])
             return model
-        except KeyError:
-            return False
+        except KeyError as e:
+            raise KeyError('Missing argument {} while creating model. '.format(e))
 
 
 def _get_architecture(module, model_name):
@@ -54,3 +58,8 @@ def _get_architecture(module, model_name):
         return dispatcher[model_architecture['model_skeleton'][model_name]], model_architecture['model_param'][model_name]
     else:
         return None, None
+
+
+def _update_architecture():
+    
+    pass

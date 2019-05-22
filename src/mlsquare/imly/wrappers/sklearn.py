@@ -8,7 +8,6 @@ import onnxmltools
 from numpy import where
 from sklearn.preprocessing import OneHotEncoder
 
-
 class SklearnKerasClassifier(KerasClassifier):
     def __init__(self, build_fn, **kwargs):
         super(KerasClassifier, self).__init__(build_fn=build_fn)
@@ -22,7 +21,9 @@ class SklearnKerasClassifier(KerasClassifier):
         kwargs.setdefault('verbose', 0)
         verbose = kwargs['verbose']
         kwargs.setdefault('params', self.params)
+        # Update as kwargs.setdefault('params', {})
         kwargs.setdefault('space', False)
+        kwargs.setdefault('cuts_per_feature', False)
 
         y_train = np.array(y_train)  # Compatibility with all formats?
         if len(y_train.shape) == 2 and y_train.shape[1] > 1:
@@ -36,18 +37,41 @@ class SklearnKerasClassifier(KerasClassifier):
 
         primal_model = self.primal
         primal_model.fit(x_train, y_train)
-        y_pred = primal_model.predict(x_train)
+        y_pred = primal_model.predict(x_train)      
         # This check is temporary. This will be moved to 'AbstractModelClass' after
         # the Architectural refactoring is done.
         if primal_model.__class__.__name__ in ('LinearSVC', 'SVC'):
             self.enc = OneHotEncoder(handle_unknown='ignore')
             self.enc.fit(y_train)
             y_pred = self.enc.transform(y_pred.reshape([-1, 1]))
+ 
+        elif primal_model.__class__.__name__ is 'DecisionTreeClassifier':
+            if not kwargs['cuts_per_feature']:
+                feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
+                cuts_per_feature = np.zeros(shape=x_train.shape[1], dtype=int)
+
+                for i, _ in enumerate(cuts_per_feature):
+                    for j, value in enumerate(feature_index):
+                        if i==value:
+                            cuts_per_feature[i] = count[j]
+
+                cuts_per_feature = list(cuts_per_feature)
+
+            else:
+                cuts_per_feature = kwargs['cuts_per_feature']
+
+            units = y_train.shape[1]
+            # This is assuming that Tune must run by default. Currently, user will have to send 
+            # 'params' to activate Tune.
+            kwargs['params'].update({'units': units, 'cuts_per_feature': cuts_per_feature})
+            # y_pred = y_train
 
         primal_data = {
             'y_pred': y_pred,
             'model_name': primal_model.__class__.__name__
         }
+
+
         # Check whether to compute for the best model or not
         if (kwargs['params'] != self.params):
             # Optimize
@@ -136,11 +160,11 @@ class SklearnKerasRegressor(KerasRegressor):
         onnx_model = onnxmltools.convert_keras(self.model)
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
-
 wrappers = {
     'LogisticRegression': SklearnKerasClassifier,
     'LinearRegression': SklearnKerasRegressor,
     'LinearDiscriminantAnalysis': SklearnKerasClassifier,
+    'DecisionTreeClassifier': SklearnKerasClassifier,
     'LinearSVC': SklearnKerasClassifier,
     'SVC': SklearnKerasClassifier,
     'Ridge': SklearnKerasRegressor,

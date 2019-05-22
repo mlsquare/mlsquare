@@ -54,8 +54,19 @@ def dope(model, **kwargs):
             print("Transpiling your model to it's Deep Neural Network equivalent")
             primal = copy.deepcopy(model)
 
-            # Get the model architecture and params
+            # Get the model architecture and params + hyperparams
             # If None return primal
+
+            # Params - Fixed parameters of the model. Not updated during runtime.
+            # Fixed across all runs of the model while searching for the best model
+            # Hyperparams - Optimization level parameters. Can vary during model search.
+            # Static(Params/Hyperparameters) - Available without access to data and primal model.
+            # Dynamic(Params/Hyperparams) - Only known once you have the data and primal model.
+
+            # Dope is accountable for:
+            # 1) Creation of model - Dealing with model_arch and params
+            # 2) Communicating with the wrapper
+            # 3) ModelMiddleware - Provides static params and hyperparams. Also, Arch for the model
             from .architectures import ModelMiddleware, _get_architecture
             # This check should be moved to wrappers. The model_arch should get 
             # updated at that level.
