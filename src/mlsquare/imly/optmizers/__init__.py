@@ -36,13 +36,13 @@ def get_best_model(x_train, y_train, **kwargs):
             reporter: A function used by Tune to keep a track of the metric by
             which the iterations should be optimized.
         '''
-
+        ## IMP - the y_train for DT should be actual y_train and not y_pred.
+        ## As per current implementation it takes y_pred
         model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
         model.fit(x_train, y_pred, epochs=250, batch_size=50) # Epochs should be configurable
-        accuracy = model.evaluate(x_train, y_train)[1]
+        accuracy = model.evaluate(x_train, y_pred)[1] # Cross check - y_train or y_pred?
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
-        # 
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
 
     # Define experiment configuration

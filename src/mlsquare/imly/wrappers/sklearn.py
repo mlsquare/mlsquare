@@ -37,17 +37,14 @@ class SklearnKerasClassifier(KerasClassifier):
 
         primal_model = self.primal
         primal_model.fit(x_train, y_train)
-        y_pred = primal_model.predict(x_train)
-        primal_data = {
-            'y_pred': y_pred,
-            'model_name': primal_model.__class__.__name__
-        }        
+        y_pred = primal_model.predict(x_train)      
         # This check is temporary. This will be moved to 'AbstractModelClass' after
         # the Architectural refactoring is done.
         if primal_model.__class__.__name__ in ('LinearSVC', 'SVC'):
             self.enc = OneHotEncoder(handle_unknown='ignore')
             self.enc.fit(y_train)
             y_pred = self.enc.transform(y_pred.reshape([-1, 1]))
+ 
         elif primal_model.__class__.__name__ is 'DecisionTreeClassifier':
             if not kwargs['cuts_per_feature']:
                 feature_index, count = np.unique(primal_model.tree_.feature, return_counts=True)
@@ -60,9 +57,6 @@ class SklearnKerasClassifier(KerasClassifier):
 
                 cuts_per_feature = list(cuts_per_feature)
 
-                print("From wrappers -- ", cuts_per_feature)
-
-
             else:
                 cuts_per_feature = kwargs['cuts_per_feature']
 
@@ -70,6 +64,12 @@ class SklearnKerasClassifier(KerasClassifier):
             # This is assuming that Tune must run by default. Currently, user will have to send 
             # 'params' to activate Tune.
             kwargs['params'].update({'units': units, 'cuts_per_feature': cuts_per_feature})
+            # y_pred = y_train
+
+        primal_data = {
+            'y_pred': y_pred,
+            'model_name': primal_model.__class__.__name__
+        }
 
 
         # Check whether to compute for the best model or not
