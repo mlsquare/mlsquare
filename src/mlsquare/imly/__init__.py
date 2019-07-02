@@ -35,6 +35,7 @@ def dope(model, **kwargs):
     kwargs.setdefault('best', True) # Remove. Optimization should happen by default.
 
     if (kwargs['using'] == None):
+        ## Notify the user!
         return model
 
     elif (kwargs['using'] == 'dnn'):
@@ -51,7 +52,7 @@ def dope(model, **kwargs):
 
         # Check if imly support module/package used by the user.
         if (module in config.keys() and model_name in config[module]):
-            print("Transpiling your model to it's Deep Neural Network equivalent")
+            print("Transpiling your model to it's Deep Neural Network equivalent...")
             primal = copy.deepcopy(model)
 
             # Get the model architecture and params + hyperparams
@@ -65,7 +66,7 @@ def dope(model, **kwargs):
 
             # Dope is accountable for:
             # 1) Creation of model - Dealing with model_arch and params
-            # 2) Communicating with the wrapper
+            # 2) **Communicating with the wrapper**
             # 3) ModelMiddleware - Provides static params and hyperparams. Also, Arch for the model
             from .architectures import ModelMiddleware, _get_architecture
             # This check should be moved to wrappers. The model_arch should get 
@@ -115,3 +116,9 @@ def dope(model, **kwargs):
         print("Transpiling the model using %s is not yet supported. We support 'dnn' as of now" % (
             kwargs['using']))
         return model
+
+
+# Arch refactoring TODOs
+# 1) Fixing IMLY nomenclature - model(static/dynamic), params(static/dynamic/hyperparams)
+# 2) Exhaustive test cases. Check pysyft examples
+# 3) Proper error handling
