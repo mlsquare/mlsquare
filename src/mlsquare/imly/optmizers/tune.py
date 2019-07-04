@@ -9,7 +9,7 @@ ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_st
          num_cpus=4)
 
 ## Push this a class with the package name. Ex - class tune(): pass
-def get_best_model(X, y, abstract_model, primal_data):
+def get_best_model(X, y, abstract_model, primal_data): ## dict:{abstract_model, primal_data, data_covariates}
     y_pred = primal_data['y_pred']
     # model_name = kwargs['primal_data']['model_name']
     # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
@@ -21,7 +21,7 @@ def get_best_model(X, y, abstract_model, primal_data):
 
     # kwargs.setdefault('space', False)
 
-    def train_model(config, reporter):
+    def train_model(config, reporter): ## Change config name
         '''
         This function is used by Tune to train the model with each iteration variations.
 
@@ -38,7 +38,7 @@ def get_best_model(X, y, abstract_model, primal_data):
 
         # model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
         abstract_model.set_params(config)
-        model = abstract_model.create_model
+        model = abstract_model.create_model()
         ## Collect training settings(epochs, batch etc..) at fit level. Attach it to the model.
         ## training_config or settings. Should we pass x and y similarly?
         model.fit(X, y_pred, epochs=250, batch_size=50) # Epochs should be configurable
@@ -52,7 +52,7 @@ def get_best_model(X, y, abstract_model, primal_data):
                                     run=train_model,
                                     resources_per_trial={"cpu": 4},
                                     stop={"mean_accuracy": 95},
-                                    config=abstract_model.get_params()) ## reduntant? since it's available within train_model()
+                                    config=abstract_model.get_params())
                                     # config=kwargs['params'])
 
     # This validation is to check if the user has opted for hyperopt search method
@@ -107,3 +107,14 @@ def get_sorted_trials(trial_list, metric):
 # Looks like the get_sorted_trials function is behaving at times.
 # It returns the "worst" model instead of the "best". Check why this happens.
 # Validate the loaded model(How?).
+
+
+        # model_params = { 'units': 1,
+        #                 'input_dim': 2,
+        #                 'activation': ['sigmoid', 'linear'],
+        #                 'optimizer': 'adam',
+        #                 'loss': 'binary_crossentropy'
+        #                 }
+
+# estimation params
+# model params

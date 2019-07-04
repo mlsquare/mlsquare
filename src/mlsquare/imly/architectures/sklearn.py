@@ -165,7 +165,7 @@ class GenericLinearModel(BaseModel): ## Rename glm
 
         model_params = self._model_params ## Why make it private? Alternate name?
         model = Sequential()
-        model.add(Dense(units=model_params['input_dim'],
+        model.add(Dense(units=model_params['units'],
                         input_dim=model_params['input_dim'],
                         activation=model_params['activation'])) # Update as l1() for lasso
         model.compile(optimizer=model_params['optimizer'],
@@ -175,6 +175,7 @@ class GenericLinearModel(BaseModel): ## Rename glm
         return model
 
     def set_params(self, params):
+        print(params)
         self._model_params = params
 
 
@@ -193,7 +194,7 @@ class LogisticRegression(GenericLinearModel):
 
     def create_model(self):
         model_params = { 'units': 1,
-                        'input_dim': 2,
+                        'input_dim': 10,
                         'activation': 'sigmoid',
                         'optimizer': 'adam',
                         'loss': 'binary_crossentropy'
@@ -333,11 +334,3 @@ def kernel_glm(**kwargs): # Update in config
     except ImportError:
         print ("keras is required to transpile the model")
         return False
-
-
-dispatcher = {
-    'glm': glm,
-    'lda': linear_discriminant_analysis,
-    'rbf': kernel_glm,
-    'cart': cart
-}

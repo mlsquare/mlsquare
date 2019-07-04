@@ -100,7 +100,7 @@ def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename mo
         # Overwrite 'default' with version if necessary
 
         # if wrapper_class: pass this check to BaseModel or Registry
-        model = wrapper(abstract_model=abstract_model, primal=primal)
+        model = wrapper(abstract_model=abstract_model, primal=primal) ## wrapper - change name
         # else:
         #     print("Unable to find a relevent wrapper function for the model you provided.\
         #         Hence, returning the model without transpiling.")

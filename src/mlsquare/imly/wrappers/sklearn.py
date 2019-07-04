@@ -287,11 +287,11 @@ class SklearnKerasClassifier(KerasClassifier):
 
     ## Temporary hack. This should be handled during architectural refactoring.
     def score(self, x, y, **kwargs):
-        if self.enc is not None:
-            y = self.enc.transform(y)
-            self.y_out = y
+        # if self.enc is not None:
+        #     y = self.enc.transform(y)
+        #     self.y_out = y
 
-        score = self.model.evaluate(x, y, **kwargs)
+        score = self.final_model.evaluate(x, y, **kwargs)
         return score
 
     def explain(self):
