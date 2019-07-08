@@ -2,15 +2,17 @@ from ray import tune
 import ray
 from ray.tune.suggest import HyperOptSearch
 import os
+import numpy as np
 # from ..architectures import ModelMiddleware
 
 # Initialize ray
 ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
          num_cpus=4)
 
-## Push this a class with the package name. Ex - class tune(): pass
+## Push this as a class with the package name. Ex - class tune(): pass
 def get_best_model(X, y, abstract_model, primal_data): ## dict:{abstract_model, primal_data, data_covariates}
-    y_pred = primal_data['y_pred']
+    # y_pred = primal_data['y_pred']
+    y_pred = np.array(primal_data['y_pred'])
     # model_name = kwargs['primal_data']['model_name']
     # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
     # mapping_instance = kwargs['build_fn'] # Rename mapping_instance dnn_instance
@@ -38,10 +40,17 @@ def get_best_model(X, y, abstract_model, primal_data): ## dict:{abstract_model, 
 
         # model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
         abstract_model.set_params(config)
+        print(type(y_pred))
+        print(y_pred.shape)
+        print(y_pred)
+        abstract_model.update_params({'input_dim': X.shape[1], 'units': 2})
+        # , 'units': y_pred.shape[1]})
+        # print(y_pred)
+        # y_pred = np.array(y_pred)
         model = abstract_model.create_model()
         ## Collect training settings(epochs, batch etc..) at fit level. Attach it to the model.
         ## training_config or settings. Should we pass x and y similarly?
-        model.fit(X, y_pred, epochs=250, batch_size=50) # Epochs should be configurable
+        model.fit(X, y_pred, epochs=250, batch_size=50, verbose=0) # Epochs should be configurable
         accuracy = model.evaluate(X, y_pred)[1] # Cross check - y_train or y_pred?
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
@@ -82,6 +91,8 @@ def get_best_model(X, y, abstract_model, primal_data): ## dict:{abstract_model, 
 
             # best_model = mapping_instance.__call__(x_train=x_train, y_train=y_pred,
             #                                         params=best_trial.config)  # TODO Pass config as argument
+            best_trial.config.update({'units': y_pred.shape[1]})
+            print(best_trial.config)
             abstract_model.set_params(best_trial.config)
             best_model = abstract_model.create_model()
             # best_model = make_model(None)

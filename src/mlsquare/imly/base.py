@@ -19,6 +19,8 @@ class Registry(object): ## Move to commons.decorator?
 
 class BaseModel(ABC):
 
+	enc = None
+
 	@abstractmethod
 	def create_model(self):
 		raise NotImplementedError('Needs to be implemented!')
@@ -31,6 +33,10 @@ class BaseModel(ABC):
 	def get_params(self):
 		raise NotImplementedError('Needs to be implemented!')
 
+	@abstractmethod
+	def update_params(self):
+		raise NotImplementedError('Needs to be implemented!')
+
 	@property
 	@abstractmethod
 	def wrapper(self):
@@ -39,5 +45,8 @@ class BaseModel(ABC):
 	@wrapper.setter
 	def wrapper(self, obj):
 		self._wrapper = obj
+
+	def transform_data(self, X, y, y_pred):
+		return X, y, y_pred
 
 registry = Registry()

@@ -9,6 +9,7 @@ This exposes the function `dope`. Dope transpiles any given model to it's DNN(De
 import json
 import copy
 from .commons.functions import _get_model_name, _get_module_name
+from .base import registry
 
 
 def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename model to primal_model?
@@ -40,16 +41,6 @@ def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename mo
         return primal_model
 
     elif (kwargs['using'] == 'dnn'):
-        # import pkg_resources
-        # resource_package = __name__
-        # config_path = '/'.join(('config', 'dnn.config'))
-
-        # get list of supported packages and algorithms
-        # config = json.load(
-        #     open(pkg_resources.resource_filename(resource_package, config_path)))
-
-        # module = _get_model_module(model)
-        # model_name = _get_model_class(model)
 
         module_name = _get_module_name(primal_model)
         model_name = _get_model_name(primal_model)
@@ -59,66 +50,14 @@ def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename mo
         print("Transpiling your model to it's Deep Neural Network equivalent...")
         ## Raise as a notification(like tf)
         primal = copy.deepcopy(primal_model)
-
-        # Get the model architecture and params + hyperparams
-        # If None return primal
-
-        # Params - Fixed parameters of the model. Not updated during runtime.
-        # Fixed across all runs of the model while searching for the best model
-        # Hyperparams - Optimization level parameters. Can vary during model search.
-        # Static(Params/Hyperparameters) - Available without access to data and primal model.
-        # Dynamic(Params/Hyperparams) - Only known once you have the data and primal model.
-
-        # Dope is accountable for:
-        # 1) Creation of model - Dealing with model_arch and params
-        # 2) **Communicating with the wrapper**
-        # 3) ModelMiddleware - Provides static params and hyperparams. Also, Arch for the model
-        from .base import registry
-        # This check should be moved to wrappers. The model_arch should get 
-        # updated at that level.
-        # if model_name is 'SVC':
-        #     if primal.get_params()['kernel'] is 'linear':
-        #         model_name = 'LinearSVC'
-        #     elif primal.get_params()['kernel'] is not 'rbf':
-        #         raise ValueError('{} kernel is not supported by IMLY right now'.format(primal.get_params()['kernel']))
-        # model_architecture, model_params = _get_architecture(module, model_name)
-        # if model_architecture and model_params:
-        #     build_fn = ModelMiddleware(fn=model_architecture,
-        #                                 params=model_params,
-        #                                 primal=primal)
-        # else:
-        #     print("Unable to find a relevent dnn model architecture for the model you provided.\
-        #         Hence, returning the model without transpiling.")
-        #     return primal
-
-        # Get the model wrapper class
-        # If None return primal
-        # from .wrappers import _get_wrapper_class
-        # wrapper_class = _get_wrapper_class(module, model_name)
         print('from dope -- ', module_name, model_name)
         abstract_model, wrapper = registry[(module_name, model_name)]['default']
         # Overwrite 'default' with version if necessary
 
         # if wrapper_class: pass this check to BaseModel or Registry
         model = wrapper(abstract_model=abstract_model, primal=primal) ## wrapper - change name
-        # else:
-        #     print("Unable to find a relevent wrapper function for the model you provided.\
-        #         Hence, returning the model without transpiling.")
-        #     return primal
-
-        # Return the model as it is if required modules are not installed
-        # if not model:
-        #     print("Returning the model without transpiling since the required modules \
-        #     were not installed.")
-        #     return primal
 
         return model
-        # else:
-        #     print("%s from the package %s is not yet supported" %
-        #           (model_name, module))
-        #     print("Returing the model without transpiling")  # complete
-        #     return model
-        # return model
     else:
         print("Transpiling the model using %s is not yet supported. We support 'dnn' as of now" % (
             kwargs['using']))
