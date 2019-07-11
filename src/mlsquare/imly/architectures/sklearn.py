@@ -8,8 +8,8 @@ from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel
 from ..wrappers.sklearn import SklearnKerasClassifier, SklearnKerasRegressor
-from ..commons.layers import DecisionTree
-from ..commons.functions import _parse_params
+from ..utils.layers import DecisionTree
+from ..utils.functions import _parse_params
 
 
 class GeneralizedLinearModel(BaseModel):  # Rename glm
@@ -328,7 +328,7 @@ def linear_discriminant_analysis(**kwargs):  # Refactor!
         from keras.models import Sequential
         from keras.layers.core import Dense
         from keras.regularizers import l2
-        from ..commons.losses import mse_in_theano
+        from ..utils.losses import mse_in_theano
 
         model = Sequential()
         model.add(Dense(
@@ -354,7 +354,7 @@ def cart(**kwargs):
         from keras.models import Model
         from keras.layers import Input, Dense
         import numpy as np
-        from ..commons.layers import DecisionTree
+        from ..utils.layers import DecisionTree
 
         # This validation is not moved to the DT Layer since x_train.shape[0] is not
         # available at that level.

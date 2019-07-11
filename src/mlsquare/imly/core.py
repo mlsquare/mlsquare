@@ -8,7 +8,7 @@ This exposes the function `dope`. Dope transpiles any given model to it's DNN(De
 
 import json
 import copy
-from .commons.functions import _get_model_name, _get_module_name
+from .utils.functions import _get_model_name, _get_module_name
 from .base import registry
 
 
