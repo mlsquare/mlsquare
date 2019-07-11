@@ -13,3 +13,27 @@ def _get_module_name(model):
 
 def _get_model_name(model):
     return model.__class__.__name__
+
+def _parse_params(params, return_as): ## Compress the whole thing using dict comprehension
+    if return_as == 'nested':
+        edited_params = {}
+        for key, value in params.items():
+            if key.split('_')[0] == 'layer': ## Add 'node' as valid prefix option
+                try:
+                    edited_params[key.split('.')[0]].update({key.split('.')[1]:value})
+                except:
+                    edited_params.update({key.split('.')[0]:{key.split('.')[1]:value}})
+            else:
+                edited_params.update({key:value})
+    elif return_as == 'flat':
+        edited_params = {}
+        for key, value in params.items():
+            if key.split('_')[0] == 'layer':
+                for k, v in params[key].items():
+                    edited_params.update({'.'.join([key, k]): v})
+            else:
+                edited_params.update({key:value})
+    else:
+        raise ValueError('Provide return_as argument -- nested or flat')
+
+    return edited_params

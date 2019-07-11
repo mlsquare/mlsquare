@@ -39,11 +39,9 @@ def get_best_model(X, y, abstract_model, primal_data): ## dict:{abstract_model, 
         # model = abstract_model.create_model()
 
         # model = mapping_instance.__call__(x_train=x_train, y_train=y_pred, params=config)
-        abstract_model.set_params(config)
-        print(type(y_pred))
-        print(y_pred.shape)
-        print(y_pred)
-        abstract_model.update_params({'input_dim': X.shape[1], 'units': 2})
+        abstract_model.set_params(params=config, set_by='optimizer')
+        print('config from tune -- ', config)
+        # abstract_model.update_params({'input_dim': X.shape[1], 'units': 2})
         # , 'units': y_pred.shape[1]})
         # print(y_pred)
         # y_pred = np.array(y_pred)
@@ -91,9 +89,9 @@ def get_best_model(X, y, abstract_model, primal_data): ## dict:{abstract_model, 
 
             # best_model = mapping_instance.__call__(x_train=x_train, y_train=y_pred,
             #                                         params=best_trial.config)  # TODO Pass config as argument
-            best_trial.config.update({'units': y_pred.shape[1]})
+            # best_trial.config.update({'units': y_pred.shape[1]}) for svm and dt
             print(best_trial.config)
-            abstract_model.set_params(best_trial.config)
+            abstract_model.set_params(params=best_trial.config, set_by='optimizer')
             best_model = abstract_model.create_model()
             # best_model = make_model(None)
             weights = os.path.join(

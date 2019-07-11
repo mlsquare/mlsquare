@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from keras.models import Sequential
-from keras.layers.core import Dense, Input
+from keras.layers import Dense, Input
 from keras.regularizers import l1_l2
 import numpy as np
 from keras.models import Model
@@ -9,26 +9,43 @@ from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel
 from ..wrappers.sklearn import SklearnKerasClassifier, SklearnKerasRegressor
 from ..commons.layers import DecisionTree
+from ..commons.functions import _parse_params
 
 
 class GeneralizedLinearModel(BaseModel):  # Rename glm
 
     def create_model(self):
 
-        model_params = self._model_params  # Why make it private? Alternate name?
+        model_params = _parse_params(self._model_params, return_as='nested')
+        # Why make it private? Alternate name?
+        # Move parsing to base model
         model = Sequential()
-        model.add(Dense(units=model_params['units'],
-                        input_dim=model_params['input_dim'],
-                        activation=model_params['activation'],
-                        kernel_regularizer=l1_l2(l1=model_params['l1'], l2=model_params['l2'])))  # Update as l1() for lasso
+        if len(self.y.shape) == 1 or self.y.shape[1] == 1:
+            units = 1
+        else:
+            units = self.y.shape[1]
+        model_params['layer_1'].update({'input_dim': self.X.shape[1], 'units': units})
+        ## Update the units choice before moving forward
+        model.add(Dense(units=model_params['layer_1']['units'],
+                        input_dim=model_params['layer_1']['input_dim'],
+                        activation=model_params['layer_1']['activation'],
+                        kernel_regularizer=l1_l2(l1=model_params['layer_1']['l1'],
+                                                 l2=model_params['layer_1']['l2'])))  # Update as l1() for lasso
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['loss'],
                       metrics=['accuracy'])
 
         return model
 
-    def set_params(self, params):
-        self._model_params = params
+    def set_params(self, **kwargs):
+        kwargs.setdefault('params', None)
+        kwargs.setdefault('set_by', None)
+        if kwargs['set_by'] == 'model_init':
+            self._model_params = _parse_params(kwargs['params'], return_as='flat')
+        elif kwargs['set_by'] == 'opitmizer':
+            self._model_params = kwargs['params']
+        else:
+            self._model_params = kwargs['params']
 
     def get_params(self):
         return self._model_params
@@ -46,16 +63,18 @@ class LogisticRegression(GeneralizedLinearModel):
     def __init__(self):
         self.wrapper = SklearnKerasClassifier
         self.module_name = 'sklearn'
-        model_params = {'units': 1,
-                        'l1': 0,
-                        'l2': 0,
-                        'activation': 'sigmoid',
+        self.model_name = 'LogisticRegression'
+        self.version = 'default'
+        model_params = {'layer_1': {'units': 1,
+                                    'l1': 0,
+                                    'l2': 0,
+                                    'activation': 'sigmoid'},
                         'optimizer': 'adam',
                         'loss': 'binary_crossentropy'
                         }
 
         # Reduntant? Can this be instead handled by update method alone?
-        self.set_params(model_params)
+        self.set_params(params=model_params, set_by='model_init')
 
 
 @registry.register
@@ -71,7 +90,7 @@ class LinearRegression(GeneralizedLinearModel):
                         'loss': 'mse'
                         }
 
-        self.set_params(model_params)
+        # self.set_params(model_params)
 # Yet to test
 
 
@@ -82,13 +101,13 @@ class Ridge(GeneralizedLinearModel):
         self.module_name = 'sklearn'
         model_params = {'units': 1,
                         'l1': 0,
-                        'l2': 0.1,  # Configurable at tune level. Dependant on input
+                        'l2': 0.1,  # Should be configurable at tune level. Dependant on input
                         'activation': 'linear',
                         'optimizer': 'adam',
                         'loss': 'mse'
                         }
 
-        self.set_params(model_params)
+        # self.set_params(model_params)
 # Yet to test
 
 
@@ -105,7 +124,7 @@ class Lasso(GeneralizedLinearModel):
                         'loss': 'mse'
                         }
 
-        self.set_params(model_params)
+        # self.set_params(model_params)
 # Yet to test
 
 
@@ -122,7 +141,7 @@ class ElasticNet(GeneralizedLinearModel):
                         'loss': 'mse'
                         }
 
-        self.set_params(model_params)
+        # self.set_params(model_params)
 
 
 @registry.register
@@ -138,7 +157,7 @@ class LinearSVC(GeneralizedLinearModel):
             'loss': 'categorical_hinge'
         }
 
-        self.set_params(model_params)
+        # self.set_params(model_params)
 
     def transform_data(self, X, y, y_pred):  # Move this to wrapper
         if len(y.shape) == 1:  # Test with multiple target shapes
@@ -156,23 +175,26 @@ class KernelGeneralizedLinearModel(GeneralizedLinearModel):
         # self.update_params({'layer_2': {'units': y.shape[1]}}) ## Moved from tune to model
         model_params = self._model_params
         model = Sequential()
-        # model.add(Dense(units=model_params['layer_1']['kernel_dim'],
-        #                 trainable=False, kernel_initializer='random_normal',
-        #                 activation=model_params['layer_1']['activation']))
-        # model.add(Dense(model_params['layer_2']['units'],  # Change to len(target.shape[1])
-        #                 activation=model_params['layer_2']['activation']))
-        # model.compile(optimizer=model_params['optimizer'],
-        #               loss=model_params['loss'],
-        #               metrics=['accuracy'])
 
-        model.add(Dense(units=10,
-                        trainable=False, kernel_initializer='random_normal',
-                        activation='linear'))
-        model.add(Dense(2,  # Change to len(target.shape[1])
-                        activation='softmax'))
-        model.compile(optimizer='adam',
-                      loss='categorical_hinge',
+        model.add(Dense(units=model_params['layer_1']['kernel_dim'],
+                        trainable=False, kernel_initializer='random_normal', ## Connect with sklearn_config
+                        activation=model_params['layer_1']['activation']))
+        model.add(Dense(model_params['layer_2']['units'],  # Change to len(target.shape[1])
+                        activation=model_params['layer_2']['activation']))
+        model.compile(optimizer=model_params['optimizer'],
+                      loss=model_params['loss'],
                       metrics=['accuracy'])
+        # model.add(Dense(model_params['layer_1'])) -- Check if keras accepts dict as params
+        
+
+        # model.add(Dense(units=10,
+        #                 trainable=False, kernel_initializer='random_normal',
+        #                 activation='linear'))
+        # model.add(Dense(2,  # Change to len(target.shape[1])
+        #                 activation='softmax'))
+        # model.compile(optimizer='adam',
+        #               loss='categorical_hinge',
+        #               metrics=['accuracy'])
 
         return model
 
@@ -181,7 +203,7 @@ class KernelGeneralizedLinearModel(GeneralizedLinearModel):
 class SVC(KernelGeneralizedLinearModel):
     def __init__(self):
         self.module_name = 'sklearn'
-        model_params = {'layer_1': {'kernel_dim': 10,
+        model_params = {'layer_1': {'kernel_dim': 10, ## Make it 'units'
                                     'activation': 'linear'
                                     },
                         'layer_2': { 'units': 2,
@@ -189,8 +211,11 @@ class SVC(KernelGeneralizedLinearModel):
                                     },
                         'optimizer': 'adam',
                         'loss': 'categorical_hinge'}
+                        # {'layer_1_activation': 'linear'}
+        
+        ## Flatten the params dict at tune level
         self.wrapper = SklearnKerasClassifier
-        self.set_params(model_params)
+        # self.set_params(model_params)
 
     def transform_data(self, X, y, y_pred):
         if len(y.shape) == 1:
@@ -225,54 +250,77 @@ class SVC(KernelGeneralizedLinearModel):
 
 class CART(GeneralizedLinearModel):
     def __init__(self):
+        self.X = None
+        self.y = None
+        self.primal = None
+        self.cuts_per_feature = None
         self.wrapper = SklearnKerasClassifier
         self.module_name = 'sklearn'
-        model_params = {  # 'units': 2, # Update
-            'layer_1': {'activation': },
-            'l2': 0,
-            'activation': 'linear',
+        model_params = {
+            'activation': 'sigmoid',
             'optimizer': 'adam',
-            'loss': 'categorical_hinge'
+            'loss': 'categorical_crossentropy'
         }
 
-        self.set_params(model_params)
+        # self.set_params(model_params)
 
     def create_model(self, **kwargs):
+        cuts_per_feature = self.cuts_per_feature
+        if cuts_per_feature is None:
+            feature_index, count = np.unique(self.primal.tree_.feature, return_counts=True)
+            cuts_per_feature = np.zeros(shape=self.X.shape[1], dtype=int)
+
+            for i, _ in enumerate(cuts_per_feature):
+                for j, value in enumerate(feature_index):
+                    if i==value:
+                        cuts_per_feature[i] = count[j]
+
+            cuts_per_feature = list(cuts_per_feature)
+
+        else:
+            cuts_per_feature = self.cuts_per_feature
+
+
+
         model_params = self._model_params
-        cuts_per_feature = kwargs['model_params']['cuts_per_feature']
+        # cuts_per_feature = kwargs['model_params']['cuts_per_feature']
         # Update to kwargs['model_params']['cuts_per_feature']
         if type(cuts_per_feature) not in (list, int):
             raise TypeError(
                 'cuts_per_feature should be of type `list` or `int`')
         elif type(cuts_per_feature) is int:
-            if cuts_per_feature > np.ceil(kwargs['x_train'].shape[0]):
-                cuts_per_feature = [np.ceil(kwargs['x_train'].shape[0]) for i in range(
-                    kwargs['x_train'].shape[1])]
+            if cuts_per_feature > np.ceil(self.X.shape[0]):
+                cuts_per_feature = [np.ceil(self.X.shape[0]) for i in range(
+                    self.X.shape[1])]
             else:
                 cuts_per_feature = [cuts_per_feature for i in range(
-                    kwargs['x_train'].shape[1])]
+                    self.X.shape[1])]
         else:
-            if len(cuts_per_feature) != kwargs['x_train'].shape[1]:
+            if len(cuts_per_feature) != self.X.shape[1]:
                 print("From arch -- ", cuts_per_feature)
                 raise ValueError(
                     'The length of `cuts_per_feature` should be equal to number of features.')
             else:
-                cuts_per_feature = [np.ceil(kwargs['x_train'].shape[0])
-                                    if i > np.ceil(kwargs['x_train'].shape[0]) else i for i in cuts_per_feature]
+                cuts_per_feature = [np.ceil(self.X.shape[0])
+                                    if i > np.ceil(self.X.shape[0]) else i for i in cuts_per_feature]
         # kwargs.setdefault('units', kwargs['model_params']['units'])
         # visible = Input(shape=(kwargs['x_train'].shape[1],))
-        visible = Input(shape=(kwargs['X'].shape[1],))
+        visible = Input(shape=(self.X.shape[1],)) ## kwargs or self
         # hidden = DecisionTree(cuts_per_feature=kwargs['cuts_per_feature'])(visible)
         hidden = DecisionTree(cuts_per_feature=cuts_per_feature)(visible)
-        output = Dense(model_params['layer_1']['units'],
-                       activation=model_params['layer_1']['activation'])(hidden)
+        output = Dense(self.y.shape[1],
+                       activation=model_params['activation'])(hidden)
         model = Model(inputs=visible, outputs=output)
 
         model.compile(optimizer=model_params['optimizer'],
-                      loss=model_params['losses'],
+                      loss=model_params['loss'],
                       metrics=['accuracy'])
 
         return model
+
+@registry.register
+class DecisionTreeClassifier(CART):
+    ''' '''
 
 
 def linear_discriminant_analysis(**kwargs):  # Refactor!
@@ -385,7 +433,31 @@ def kernel_glm(**kwargs):  # Update in config
 Qs
 1) Data transformation level - model, commons + wrapper or external?
   Use OHE for every classification algorithms
-2) update_params - should it be a part of base model?
+[X] 2) update_params - should it be a part of base model?
 3) Change the structure of model_params. Add options for layer level details
 4) Update 'units' and 'input_dim' within model vs from tune
+5) Keras custom name for layers - especially for functional API
+Come up with a naming convention for keras layers. Check existing keras convention
+
+6) {'layer_1_units': 10,
+    'layer_2_units': 12}
+Parse this back at create_model().
+7) CART
+    + Consider dt_regression as well.
+
+Updates(09/07/2019) - 
+1) Pass all meaningful kwargs from 'wrapper.fit()' to the model - primal, X, y, cuts_per_feature etc..
+These are then expected to be validated in each model's __init__.
+Data preperation needs to be done by the wrapper.
+
+Check SOLID principles to clarify the confusion on transform method and data flow issues.
+
+Notes on multilayer changes - 
+1) User provides dict in nested structure.
+2) Flatten it at set_params.
+3) Convert back to nested structure at create_model level.
+4) Why not follow a flattened approach throughout the flow - arch + tune + set/create methods
+
+Checklist (validate each changes on each algorithm) - 
+1) Logistic regression [multilayer_params[DONE], , OHE[], transform_data[]]
 '''

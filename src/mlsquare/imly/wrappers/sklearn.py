@@ -23,7 +23,13 @@ class SklearnKerasClassifier(KerasClassifier):
         # else:
         #     # units = y.shape[1]
         #     units = 2
-        self.abstract_model.update_params({'input_dim': X.shape[1]})
+        kwargs.setdefault('cuts_per_feature', None) ## Better way to handle?
+        self.abstract_model.X = X
+        self.abstract_model.y = y
+        self.abstract_model.primal = self.primal
+
+        self.abstract_model.cuts_per_feature = kwargs['cuts_per_feature']
+        # self.abstract_model.update_params({'input_dim': X.shape[1]}) For dt
         # super(KerasClassifier, self).__init__(build_fn=self.abstract_model.create_model()) 
         # ## This is pointless!! build_fn is different from imly model created in tune
         # ## Change this.
@@ -82,8 +88,9 @@ class SklearnKerasClassifier(KerasClassifier):
         score = self.final_model.evaluate(x, y, **kwargs)
         return score
 
-    def explain(self):
+    def explain(self, **kwargs):
         # @param: SHAP or interpret
+        print('Coming soon...')
         pass
 
 
@@ -131,5 +138,5 @@ class SklearnKerasRegressor(KerasRegressor):
 
 '''
 Updates -
-1) Remove parent Keras wrapper
+1) Remove parent Keras wrapper - IMP
 '''

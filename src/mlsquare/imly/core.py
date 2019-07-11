@@ -51,11 +51,13 @@ def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename mo
         ## Raise as a notification(like tf)
         primal = copy.deepcopy(primal_model)
         print('from dope -- ', module_name, model_name)
+
         abstract_model, wrapper = registry[(module_name, model_name)]['default']
         # Overwrite 'default' with version if necessary
 
         # if wrapper_class: pass this check to BaseModel or Registry
         model = wrapper(abstract_model=abstract_model, primal=primal) ## wrapper - change name
+        # model = adapt(abstract_model, primal) 
 
         return model
     else:
@@ -65,9 +67,14 @@ def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename mo
 
 '''
 Arch refactoring TODOs
-1) Fixing IMLY nomenclature - model(static/dynamic), params(static/dynamic/hyperparams)
+1) Fixing IMLY nomenclature - model(static/dynamic), params(static/dynamic/hyperparams) [X]
 2) Exhaustive test cases. Check pysyft examples
 3) Proper error handling
-4) Move core code from __init__ to it's respective files
+4) Move core code from __init__ to it's respective files [X]
 5) y_train and x_train -- X, y
+5) Alternate names for wrapper - 
+    + module_extender
+    + enhancer
+    + converter(converting standard ml to dnn)
+    + *adapter* -- adapt(verb)
 '''
