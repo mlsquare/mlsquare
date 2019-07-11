@@ -7,10 +7,10 @@ class Registry(object): ## Move to commons.decorator?
     # @staticmethod ## static or class - crosscheck
     def register(self, model): ##variable name options -- register_model
         model = model()
-        wrapper = model.wrapper
+        adapter = model.adapter
         module_name = model.module_name
         # Update this flow with the model versions option
-        self.data[(module_name, model.__class__.__name__)] = {'default':[model, wrapper]}
+        self.data[(module_name, model.__class__.__name__)] = {'default':[model, adapter]}
 
 
     def __getitem__(self, key):
@@ -39,12 +39,12 @@ class BaseModel(ABC):
 
 	@property
 	@abstractmethod
-	def wrapper(self):
+	def adapter(self):
 		raise NotImplementedError('Needs to be implemented!')
 
-	@wrapper.setter
-	def wrapper(self, obj):
-		self._wrapper = obj
+	@adapter.setter
+	def adapter(self, obj):
+		self._adapter = obj
 
 	def transform_data(self, X, y, y_pred):
 		return X, y, y_pred

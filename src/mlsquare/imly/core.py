@@ -12,7 +12,7 @@ from .utils.functions import _get_model_name, _get_module_name
 from .base import registry
 
 
-def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename model to primal_model?
+def dope(primal_model,abstract_model=None, adapter=None, **kwargs): ## Rename model to primal_model?
     print(primal_model.__module__)
     """Transpiles a given model to it's DNN equivalent.
 
@@ -52,11 +52,11 @@ def dope(primal_model,abstract_model=None, wrapper=None, **kwargs): ## Rename mo
         primal = copy.deepcopy(primal_model)
         print('from dope -- ', module_name, model_name)
 
-        abstract_model, wrapper = registry[(module_name, model_name)]['default']
+        abstract_model, adapt = registry[(module_name, model_name)]['default']
         # Overwrite 'default' with version if necessary
 
         # if wrapper_class: pass this check to BaseModel or Registry
-        model = wrapper(abstract_model=abstract_model, primal=primal) ## wrapper - change name
+        model = adapt(abstract_model=abstract_model, primal=primal) ## wrapper - change name
         # model = adapt(abstract_model, primal) 
 
         return model
