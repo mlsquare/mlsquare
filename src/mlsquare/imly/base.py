@@ -1,20 +1,28 @@
 from abc import ABC, abstractmethod
 
-class Registry(object): ## Move to commons.decorator?
+## Move to commons.decorator?
+class Registry(object):
 
     def __init__(self):
-        self.data = {} ##variable name options -- model_data or model_info
-    # @staticmethod ## static or class - crosscheck
-    def register(self, model): ##variable name options -- register_model
+        # Variable name options -- model_data or model_info
+        self.data = {}
+    # @staticmethod -- static or class - crosscheck
+    # Using static/class isn't feasible since the whole registry framework
+    # relies on an instance Registry class.
+    def register(self, model):
         model = model()
         adapter = model.adapter
         module_name = model.module_name
-        # Update this flow with the model versions option
-        self.data[(module_name, model.__class__.__name__)] = {'default':[model, adapter]}
+        model_name = model.name
+        version = model.version
+        try: ## Improve this flow. 
+            self.data[(module_name, model_name)].update({version:[model, adapter]})
+        except:
+            self.data[(module_name, model_name)] = {version:[model, adapter]}
 
 
     def __getitem__(self, key):
-       return self.data[key]
+        return self.data[key]
 
 
 class BaseModel(ABC):
@@ -50,12 +58,3 @@ class BaseModel(ABC):
 		return X, y, y_pred
 
 registry = Registry()
-
-
-'''
-Add versioning option for models
-1) module is available and mapping is available. Better version of mapping.
-2) Module is avialbale, no mapping.
-3) Module is not available. Implement adapter, model etc from scratch
-4) uuid for versions
-'''

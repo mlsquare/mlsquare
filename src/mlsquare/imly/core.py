@@ -13,7 +13,6 @@ from .base import registry
 
 
 def dope(primal_model,abstract_model=None, adapter=None, **kwargs): ## Rename model to primal_model?
-    print(primal_model.__module__)
     """Transpiles a given model to it's DNN equivalent.
 
     Args:
@@ -35,6 +34,8 @@ def dope(primal_model,abstract_model=None, adapter=None, **kwargs): ## Rename mo
     # Set the default values for the arguments
     kwargs.setdefault('using', 'dnn')
     kwargs.setdefault('best', True) # Remove. Optimization should happen by default.
+    kwargs.setdefault('version', 'default')
+    model_version = kwargs['version']
 
     if (kwargs['using'] == None):
         ## Notify the user!
@@ -46,13 +47,12 @@ def dope(primal_model,abstract_model=None, adapter=None, **kwargs): ## Rename mo
         model_name = _get_model_name(primal_model)
 
         # Check if imly support module/package used by the user.
-        # if (module in config.keys() and model_name in config[module_name]):
         print("Transpiling your model to it's Deep Neural Network equivalent...")
         ## Raise as a notification(like tf)
         primal = copy.deepcopy(primal_model)
-        print('from dope -- ', module_name, model_name)
 
-        abstract_model, adapt = registry[(module_name, model_name)]['default']
+        abstract_model, adapt = registry[(module_name, model_name)][model_version]
+        ## Error handling for wrong versions
         # Overwrite 'default' with version if necessary
 
         # if wrapper_class: pass this check to BaseModel or Registry
@@ -64,17 +64,3 @@ def dope(primal_model,abstract_model=None, adapter=None, **kwargs): ## Rename mo
         print("Transpiling the model using %s is not yet supported. We support 'dnn' as of now" % (
             kwargs['using']))
         return model
-
-'''
-Arch refactoring TODOs
-1) Fixing IMLY nomenclature - model(static/dynamic), params(static/dynamic/hyperparams) [X]
-2) Exhaustive test cases. Check pysyft examples
-3) Proper error handling
-4) Move core code from __init__ to it's respective files [X]
-5) y_train and x_train -- X, y
-5) Alternate names for wrapper - 
-    + module_extender
-    + enhancer
-    + converter(converting standard ml to dnn)
-    + *adapter* -- adapt(verb)
-'''

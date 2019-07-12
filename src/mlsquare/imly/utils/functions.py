@@ -7,14 +7,13 @@
 
 
 def _get_module_name(model):
-    print('from functions --', model.__class__.__module__.split('.')[0])
     return model.__class__.__module__.split('.')[0]
 
 
 def _get_model_name(model):
     return model.__class__.__name__
 
-def _parse_params(params, return_as): ## Compress the whole thing using dict comprehension
+def _parse_params(params, return_as):
     if return_as == 'nested':
         edited_params = {}
         for key, value in params.items():
@@ -34,6 +33,6 @@ def _parse_params(params, return_as): ## Compress the whole thing using dict com
             else:
                 edited_params.update({key:value})
     else:
-        raise ValueError('Provide return_as argument -- nested or flat')
+        raise ValueError('Provide a valid return_as argument -- nested or flat')
 
     return edited_params
