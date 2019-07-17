@@ -129,3 +129,29 @@ class SklearnKerasRegressor():
 
         onnx_model = onnxmltools.convert_keras(self.final_model)
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
+
+class SklearnPytorchClassifier():
+    def __init__(self, abstract_model, primal, **kwargs):
+        self.primal = primal
+        self.params = None ## Temporary!
+        self.abstract_model = abstract_model
+
+    def fit(self, X, y, **kwargs):
+        self.abstract_model.X = X
+        self.abstract_model.y = y
+        self.abstract_model.primal = self.primal
+
+        for epoch in range(50):
+            # Forward Propagation
+            # Access model, criterion and optimizer from abstract_model
+            # Alter how tune computes `fit`. Override keras_model.fit option
+            y_pred = model(x)    # Compute and print loss
+            loss = criterion(y_pred, y)
+            print('epoch: ', epoch,' loss: ', loss.item())    # Zero the gradients
+            optimizer.zero_grad()
+            
+            # perform a backward pass (backpropagation)
+            loss.backward()
+            
+            # Update the parameters
+            optimizer.step()        

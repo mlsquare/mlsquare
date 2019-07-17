@@ -7,7 +7,7 @@ import numpy as np
 from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel
-from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor
+from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnPytorchClassifier
 from ..layers.keras import DecisionTree
 from ..utils.functions import _parse_params
 # from ..losses import lda_loss
@@ -79,6 +79,45 @@ class LogisticRegression(GeneralizedLinearModel):
 
         self.set_params(params=model_params, set_by='model_init')
 
+@registry.register
+class PytorchLogisticRegression(GeneralizedLinearModel):
+    '''
+    Pending - 
+    1) create_model changes
+    2) adapter
+    3) optimizer changes
+    '''
+    def __init__(self):
+        self.adapter = SklearnPytorchClassifier
+        self.module_name = 'sklearn'  # Rename the variable
+        self.name = 'LogisticRegression'
+        self.version = 'pytorch'
+        model_params = {'layer_1': {'units': 1, ## Make key name private - '_layer'
+                                    'l1': 0,
+                                    'l2': 0,
+                                    'activation': 'sigmoid'},
+                        'optimizer': 'adam',
+                        'loss': 'binary_crossentropy'
+                        }
+
+        self.set_params(params=model_params, set_by='model_init')
+
+    def create_model(self, **kwargs):
+        import torch
+        import torch.nn as nn
+
+        n_in, n_h, n_out, batch_size = 10, 5, 1, 10
+
+        x = torch.randn(batch_size, n_in)
+        y = torch.tensor([[1.0], [0.0], [0.0], [1.0], [1.0], [1.0], [0.0], [0.0], [1.0], [1.0]])
+
+        model = nn.Sequential(nn.Linear(n_in, n_out), nn.Sigmoid())
+
+        criterion = torch.nn.MSELoss() ## try crossentropyloss instead
+
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+        return model
 
 @registry.register
 class LinearRegression(GeneralizedLinearModel):
