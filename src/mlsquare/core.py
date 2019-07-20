@@ -64,3 +64,7 @@ def dope(primal_model,abstract_model=None, adapter=None, **kwargs): ## Rename mo
         print("Transpiling the model using %s is not yet supported. We support 'dnn' as of now" % (
             kwargs['using']))
         return model
+
+'''
+1) Error handling at component level v/s dope/higher level -- back to the caller
+'''

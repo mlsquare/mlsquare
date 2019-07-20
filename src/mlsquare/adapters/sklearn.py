@@ -24,6 +24,8 @@ class SklearnKerasClassifier():
         verbose = kwargs['verbose']
         kwargs.setdefault('params', self.params)
         kwargs.setdefault('space', False)
+        kwargs.setdefault('epochs', 250)
+        kwargs.setdefault('batch_size', 30)
         self.params = kwargs['params']
         X = np.array(X)
         y = np.array(y)
@@ -35,11 +37,13 @@ class SklearnKerasClassifier():
         X, y, y_pred = self.abstract_model.transform_data(X, y, y_pred)
 
         # This should happen only after transformation.
-        self.abstract_model.X = X
+        self.abstract_model.X = X ##  abstract -> model_skeleton
         self.abstract_model.y = y
         self.abstract_model.primal = self.primal
 
         if self.params != None: ## Validate implementation with different types of tune input
+            if type(self.params) != dict:
+                raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.abstract_model.update_params(self.params)
 
@@ -49,7 +53,8 @@ class SklearnKerasClassifier():
         }
 
         ## Search for best model using Tune ##
-        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model, primal_data=primal_data)
+        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model, 
+                                            primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'])
         return self.final_model  # Not necessary.
 
     def save(self, filename=None):
@@ -129,3 +134,40 @@ class SklearnKerasRegressor():
 
         onnx_model = onnxmltools.convert_keras(self.final_model)
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
+
+class SklearnPytorchClassifier():
+    def __init__(self, abstract_model, primal, **kwargs):
+        self.primal = primal
+        self.params = None ## Temporary!
+        self.abstract_model = abstract_model
+
+    def fit(self, X, y, **kwargs):
+        self.abstract_model.X = X
+        self.abstract_model.y = y
+        self.abstract_model.primal = self.primal
+
+        for epoch in range(50):
+            # Forward Propagation
+            # Access model, criterion and optimizer from abstract_model
+            # Alter how tune computes `fit`. Override keras_model.fit option
+            y_pred = model(x)    # Compute and print loss
+            loss = criterion(y_pred, y)
+            print('epoch: ', epoch,' loss: ', loss.item())    # Zero the gradients
+            optimizer.zero_grad()
+            
+            # perform a backward pass (backpropagation)
+            loss.backward()
+            
+            # Update the parameters
+            optimizer.step()        
+
+'''
+1) test data_generators -- keras article
+    + sklearn's capacity to deal with generators
+    + Adding data_generators support to the proxy_model
+    + Both pytorch and keras
+2) Idempotency
+    + Saving followed by load - run and validate the results
+    + Choose 'using' = None. Returns the primal model
+    + A fallback option - Status code, primal and info
+'''
