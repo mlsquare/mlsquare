@@ -89,16 +89,18 @@ class PytorchLogisticRegression(GeneralizedLinearModel):
     '''
     def __init__(self):
         self.adapter = SklearnPytorchClassifier
-        self.module_name = 'sklearn'  # Rename the variable
+        self.module_name = 'sklearn'  # Rename the variable -- primal_framework
+        # self.modeling_frontend = 'sklearn' 
         self.name = 'LogisticRegression'
-        self.version = 'pytorch'
+        self.version = 'V2'
+        self.modeling_backend = 'pytorch' ## proxy_framework
         model_params = {'layer_1': {'units': 1, ## Make key name private - '_layer'
                                     'l1': 0,
                                     'l2': 0,
                                     'activation': 'sigmoid'},
                         'optimizer': 'adam',
                         'loss': 'binary_crossentropy'
-                        }
+                        } ## proxy_model_params
 
         self.set_params(params=model_params, set_by='model_init')
 
