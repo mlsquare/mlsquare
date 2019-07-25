@@ -21,9 +21,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_squared_error
 
-from mlsquare.imly.base import registry
-from mlsquare.imly import dope
-from mlsquare.imly.adapters import SklearnKerasClassifier, SklearnKerasRegressor
+from mlsquare.base import registry
+from mlsquare import dope
+from mlsquare.adapters import SklearnKerasClassifier, SklearnKerasRegressor
 from datasets import _load_diabetes, _load_airfoil, _load_iris, _load_salary
 
 
@@ -107,10 +107,6 @@ def _train_and_score_model(dataset, module_name, model_name):
     assert abstract_model.version == 'default'
     assert 0 <= score <= 1
 
-# def test_linear_regression():
-#     datasets = [_load_diabetes]
-#     model = LinearRegression()
-#     _run_multiple (model, datasets)
 @pytest.mark.skip(reason="Skipping...")
 def test_logistic_regression():
     # datasets = [_load_iris, _load_salary]
@@ -155,7 +151,7 @@ def test_linear_svc():
     assert abstract_model.version == 'default'
     assert 0 <= score <= 1
 
-@pytest.mark.skip(reason="Skipping...")
+
 def test_linear_regression():
     # datasets = [_load_iris, _load_salary]
     # datasets = _load_iris
@@ -177,7 +173,7 @@ def test_linear_regression():
     assert abstract_model.name == 'LinearRegression'
     assert abstract_model.version == 'default'
     assert 0 <= score <= 1
-@pytest.mark.skip(reason="Skipping...")
+
 def test_logistic_regression_primal_and_proxy_concordance():
     X, Y = _load_iris()
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.60, random_state=0)
@@ -198,7 +194,7 @@ def test_logistic_regression_primal_and_proxy_concordance():
     ## Provide seed value
     ## Prioritize obvious errors from user
 
-@pytest.mark.skip(reason="Skipping...")
+
 def test_logistic_regression_with_external_parameters():
     ## Both wrong params and right ones
     x_train, x_test, y_train, y_test = _load_classification_data()
@@ -211,7 +207,6 @@ def test_logistic_regression_with_external_parameters():
     assert_array_almost_equal(pred1, pred2, 1)
 
 
-# @pytest.mark.skip(reason="Skipping...")
 def test_logistic_regression_exception():
     ## Both wrong params and right ones
     x_train, x_test, y_train, y_test = _load_classification_data()
@@ -222,9 +217,21 @@ def test_logistic_regression_exception():
     assert_raises(TypeError, final_model.fit(), x_train,y_train, params=params, epochs=300)
     # pred1 = final_model.score(x_test, y_test)[1]
     # pred2 = primal_model.fit(x_train, y_train).score(x_test, y_test)
-    # assert_array_almost_equal(pred1, pred2, 1) 
+    # assert_array_almost_equal(pred1, pred2, 1)
 
-@pytest.mark.skip(reason="Skipping...")
+
+def test_logistic_regression_ttest():
+    ## Both wrong params and right ones
+    x_train, x_test, y_train, y_test = _load_classification_data()
+    primal_model = LogisticRegression()
+    final_model = _replicate_dope(primal_model)
+    params = {'optimizer': ['adam', 'nadam']}
+    final_model.fit(x_train,y_train, params=params, epochs=300)
+    pred1 = final_model.score(x_test, y_test)[1]
+    pred2 = primal_model.fit(x_train, y_train).score(x_test, y_test)
+    assert_array_almost_equal(pred1, pred2, 1) 
+
+
 def test_update_params():
     model_skeleton, _ = registry[('sklearn', 'LogisticRegression')]['default']
     default_params = model_skeleton.get_params()

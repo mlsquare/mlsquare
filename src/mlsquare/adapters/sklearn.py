@@ -83,6 +83,18 @@ class SklearnKerasClassifier():
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
 
+    def predict(self, X):
+        X = np.array(X)
+        if hasattr(self.final_model, 'predict_classes'):
+            pred = self.final_model.predict_classes(X)
+        else:
+            pred = self.final_model.predict(X)
+            pred = np.argmax(pred,axis=1)
+        return pred
+
+    def predict_proba(self, X):
+        pass
+
     def explain(self, **kwargs):
         # @param: SHAP or interpret
         print('Coming soon...')
@@ -122,6 +134,15 @@ class SklearnKerasRegressor():
     def score(self, X, y, **kwargs):
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
+
+    def predict(self, X):
+        '''
+        Pending:
+        1) Write a 'filter_sk_params' function(check keras_regressor wrapper) if necessary.
+        2) Data checks and data conversions
+        '''
+        pred = self.final_model.predict(X)
+        return pred
 
     def save(self, filename=None):
         if filename == None:
