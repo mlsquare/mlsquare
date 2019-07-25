@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from ..optmizers import get_best_model
-from ..utils.functions import _parse_params 
+from ..utils.functions import _parse_params
 from keras.wrappers.scikit_learn import KerasRegressor, KerasClassifier
 import pickle
 import onnxmltools
@@ -53,7 +53,7 @@ class SklearnKerasClassifier():
         }
 
         ## Search for best model using Tune ##
-        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model, 
+        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model,
                                             primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'])
         return self.final_model  # Not necessary.
 
@@ -116,7 +116,7 @@ class SklearnKerasRegressor():
         kwargs.setdefault('params', self.params)
         verbose = kwargs['verbose']
         self.params = kwargs['params']
-        
+
         if self.params != None: ## Validate implementation with different types of tune input
             self.params = _parse_params(self.params, return_as='flat')
             self.abstract_model.update_params(self.params)
@@ -175,12 +175,12 @@ class SklearnPytorchClassifier():
             loss = criterion(y_pred, y)
             print('epoch: ', epoch,' loss: ', loss.item())    # Zero the gradients
             optimizer.zero_grad()
-            
+
             # perform a backward pass (backpropagation)
             loss.backward()
-            
+
             # Update the parameters
-            optimizer.step()        
+            optimizer.step()
 
 '''
 1) test data_generators -- keras article
