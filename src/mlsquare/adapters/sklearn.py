@@ -42,7 +42,7 @@ class SklearnKerasClassifier():
         self.abstract_model.primal = self.primal
 
         if self.params != None: ## Validate implementation with different types of tune input
-            if type(self.params) != dict:
+            if not isinstance(self.params, dict):
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.abstract_model.update_params(self.params)
@@ -55,7 +55,7 @@ class SklearnKerasClassifier():
         ## Search for best model using Tune ##
         self.final_model = get_best_model(X, y, abstract_model = self.abstract_model,
                                             primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'])
-        return self.final_model  # Not necessary.
+        return self.final_model  # Return self? IMPORTANT
 
     def save(self, filename=None):
         if filename == None:
@@ -118,6 +118,8 @@ class SklearnKerasRegressor():
         self.params = kwargs['params']
 
         if self.params != None: ## Validate implementation with different types of tune input
+            if not isinstance(self.params, dict):
+                raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.abstract_model.update_params(self.params)
         primal_model = self.primal

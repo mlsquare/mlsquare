@@ -44,7 +44,7 @@ def dope(primal_model, abstract_model=None, adapt=None, **kwargs): ## Rename mod
         module_name = _get_module_name(primal_model)
         model_name = _get_model_name(primal_model)
 
-        primal = copy.deepcopy(primal_model)
+        primal = copy.deepcopy(primal_model) # Needed as a copy?
         if abstract_model == None and adapt == None:
             try:
                 abstract_model, adapt = registry[(module_name, model_name)][model_version]
