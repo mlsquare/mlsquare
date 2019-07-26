@@ -1,1 +1,1 @@
-from .keras import DecisionTree
+from .keras import DecisionTree, Bin, KronProd
