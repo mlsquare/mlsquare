@@ -33,6 +33,15 @@ jobs:
           name: run tests
           command: python setup.py test
 
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: dev
+
 # Original CircleCI config
 # # Python CircleCI 2.0 configuration file
 # #
