@@ -211,6 +211,7 @@ class LinearSVC(GeneralizedLinearModel):
         self.set_params(params=model_params, set_by='model_init')
 
     def transform_data(self, X, y, y_pred):
+        ## Should error handling be done at this level?
         if len(y.shape) == 1:  # Test with multiple target shapes
             y = y.reshape(-1, 1)
         self.enc = OneHotEncoder(handle_unknown='ignore')

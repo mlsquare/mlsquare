@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from ..optmizers import get_best_model
-from ..utils.functions import _parse_params 
+from ..utils.functions import _parse_params
 from keras.wrappers.scikit_learn import KerasRegressor, KerasClassifier
 import pickle
 import onnxmltools
@@ -42,7 +42,7 @@ class SklearnKerasClassifier():
         self.abstract_model.primal = self.primal
 
         if self.params != None: ## Validate implementation with different types of tune input
-            if type(self.params) != dict:
+            if not isinstance(self.params, dict):
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.abstract_model.update_params(self.params)
@@ -53,9 +53,9 @@ class SklearnKerasClassifier():
         }
 
         ## Search for best model using Tune ##
-        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model, 
+        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model,
                                             primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'])
-        return self.final_model  # Not necessary.
+        return self.final_model  # Return self? IMPORTANT
 
     def save(self, filename=None):
         if filename == None:
@@ -83,6 +83,18 @@ class SklearnKerasClassifier():
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
 
+    def predict(self, X):
+        X = np.array(X)
+        if hasattr(self.final_model, 'predict_classes'):
+            pred = self.final_model.predict_classes(X)
+        else:
+            pred = self.final_model.predict(X)
+            pred = np.argmax(pred,axis=1)
+        return pred
+
+    def predict_proba(self, X):
+        pass
+
     def explain(self, **kwargs):
         # @param: SHAP or interpret
         print('Coming soon...')
@@ -104,8 +116,10 @@ class SklearnKerasRegressor():
         kwargs.setdefault('params', self.params)
         verbose = kwargs['verbose']
         self.params = kwargs['params']
-        
+
         if self.params != None: ## Validate implementation with different types of tune input
+            if not isinstance(self.params, dict):
+                raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.abstract_model.update_params(self.params)
         primal_model = self.primal
@@ -122,6 +136,15 @@ class SklearnKerasRegressor():
     def score(self, X, y, **kwargs):
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
+
+    def predict(self, X):
+        '''
+        Pending:
+        1) Write a 'filter_sk_params' function(check keras_regressor wrapper) if necessary.
+        2) Data checks and data conversions
+        '''
+        pred = self.final_model.predict(X)
+        return pred
 
     def save(self, filename=None):
         if filename == None:
@@ -154,12 +177,12 @@ class SklearnPytorchClassifier():
             loss = criterion(y_pred, y)
             print('epoch: ', epoch,' loss: ', loss.item())    # Zero the gradients
             optimizer.zero_grad()
-            
+
             # perform a backward pass (backpropagation)
             loss.backward()
-            
+
             # Update the parameters
-            optimizer.step()        
+            optimizer.step()
 
 '''
 1) test data_generators -- keras article
