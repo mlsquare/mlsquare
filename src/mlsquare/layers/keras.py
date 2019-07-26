@@ -4,7 +4,7 @@ class Bin(Layer):
     """
     A custom keras layer to create bins in
     DNDT implementation(https://arxiv.org/pdf/1806.06988.pdf).
-    The input for this layer should always be the Keras 'Input' layer.
+    The input for this layer should always be a Keras 'Input' layer.
     The layer then accepts a feature of your choice(index_of_feature) and
     the number of bins(num_of_cuts + 1) you want the selected feature
     to be split into.
@@ -14,6 +14,11 @@ class Bin(Layer):
     # Arguments
         index_of_feature: Integer, The position of your choice of feature to be split into bins.
         num_of_cuts: Integer, The number of bins you want the feature to be split into.
+
+    Note: This layer was initially created with the intention to be used in DecisionTree layer.
+    We later realized that the DecisionTree layer was better off with a `binning` function rather than
+    a layer. Hence, it's not used in DecisionTree layer anymore. 
+    The same applies to KronProd layer as well.
 
     """
 
