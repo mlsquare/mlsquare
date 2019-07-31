@@ -10,10 +10,9 @@ from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 
 from mlsquare.base import registry
-from mlsquare import dope
-from mlsquare.adapters import SklearnKerasClassifier, SklearnKerasRegressor
+from mlsquare.adapters import SklearnKerasClassifier
 from mlsquare.architectures.sklearn import GeneralizedLinearModel, KernelGeneralizedLinearModel, CART
-from datasets import _load_diabetes, _load_airfoil, _load_iris, _load_salary
+from datasets import _load_diabetes, _load_iris
 
 
 
@@ -257,7 +256,7 @@ def test_cart_create_model_method():
     mock_model = MockModel()
     mock_model.y = np.array([[0,1], [0,1]])
     mock_model.X = np.array([[0,1], [0,1]])
-    x_train, x_test, y_train, _ = _load_classification_data()
+    x_train, _, y_train, _ = _load_classification_data()
     y_train = to_categorical(y_train)
     mock_model.primal = DecisionTreeClassifier().fit(x_train, y_train)
     mock_proxy_model = mock_model.create_model()
@@ -269,10 +268,3 @@ def test_cart_create_model_method():
 def test_linear_svc_transform_data():
     # Pending
     pass
-
-'''
-Notes - 
-1) Try using fixtures for fit method. To avoid calling fit
-2) There aren't any meaningful determinstic cases for algorithms right now.
-But can be added in future.
-'''

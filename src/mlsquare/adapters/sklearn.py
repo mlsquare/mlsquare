@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 from ..optmizers import get_best_model
 from ..utils.functions import _parse_params
-from keras.wrappers.scikit_learn import KerasRegressor, KerasClassifier
 import pickle
 import onnxmltools
-from numpy import where
-from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 ## Python log module - log_info, log_error, log_debug, log_warn -- Data type conversion scenario
 
@@ -21,7 +18,6 @@ class SklearnKerasClassifier():
 
         self.abstract_model.cuts_per_feature = kwargs['cuts_per_feature'] ## For all models?
         kwargs.setdefault('verbose', 0)
-        verbose = kwargs['verbose']
         kwargs.setdefault('params', self.params)
         kwargs.setdefault('space', False)
         kwargs.setdefault('epochs', 250)
@@ -54,7 +50,8 @@ class SklearnKerasClassifier():
 
         ## Search for best model using Tune ##
         self.final_model = get_best_model(X, y, abstract_model = self.abstract_model,
-                                            primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'])
+                                            primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
+                                            verbose=kwargs['verbose'])
         return self.final_model  # Return self? IMPORTANT
 
     def save(self, filename=None):
@@ -98,7 +95,7 @@ class SklearnKerasClassifier():
     def explain(self, **kwargs):
         # @param: SHAP or interpret
         print('Coming soon...')
-        pass
+        return self.final_model.summary()
 
 
 
@@ -113,8 +110,9 @@ class SklearnKerasRegressor():
         self.abstract_model.y = y
         self.abstract_model.primal = self.primal
         kwargs.setdefault('verbose', 0)
+        kwargs.setdefault('epochs', 250)
+        kwargs.setdefault('batch_size', 30)
         kwargs.setdefault('params', self.params)
-        verbose = kwargs['verbose']
         self.params = kwargs['params']
 
         if self.params != None: ## Validate implementation with different types of tune input
@@ -130,7 +128,9 @@ class SklearnKerasRegressor():
             'model_name': primal_model.__class__.__name__
         }
 
-        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model, primal_data=primal_data)
+        self.final_model = get_best_model(X, y, abstract_model=self.abstract_model, primal_data=primal_data,
+                                          epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
+                                          verbose=kwargs['verbose'])
         return self.final_model  # Not necessary.
 
     def score(self, X, y, **kwargs):
@@ -183,14 +183,3 @@ class SklearnPytorchClassifier():
 
             # Update the parameters
             optimizer.step()
-
-'''
-1) test data_generators -- keras article
-    + sklearn's capacity to deal with generators
-    + Adding data_generators support to the proxy_model
-    + Both pytorch and keras
-2) Idempotency
-    + Saving followed by load - run and validate the results
-    + Choose 'using' = None. Returns the primal model
-    + A fallback option - Status code, primal and info
-'''

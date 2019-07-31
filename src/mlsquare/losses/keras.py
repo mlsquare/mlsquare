@@ -2,8 +2,8 @@ import theano.tensor as T
 import theano
 import numpy as np
 from theano.compile.ops import as_op
-from theano.compile.nanguardmode import NanGuardMode
-from theano.compile.debugmode import DebugMode
+# from theano.compile.nanguardmode import NanGuardMode
+# from theano.compile.debugmode import DebugMode
 
 
 @as_op(itypes=[theano.tensor.ivector], otypes=[theano.tensor.ivector])
@@ -36,7 +36,7 @@ def lda_loss(n_components, margin):
             return (1.0 / (m - 1)) * T.dot(Xgt_bar.T, Xgt_bar)
 
         # scan over groups
-        covs_t, updates = theano.scan(fn=compute_cov, outputs_info=None,
+        covs_t, _ = theano.scan(fn=compute_cov, outputs_info=None,
                                       sequences=[groups], non_sequences=[y_pred, yt],
                                     #   mode=NanGuardMode(nan_is_error=True, inf_is_error=True, big_is_error=True),
                                       mode='DebugMode'

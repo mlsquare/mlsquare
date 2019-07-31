@@ -79,47 +79,47 @@ class LogisticRegression(GeneralizedLinearModel):
 
         self.set_params(params=model_params, set_by='model_init')
 
-@registry.register
-class PytorchLogisticRegression(GeneralizedLinearModel):
-    '''
-    Pending - 
-    1) create_model changes
-    2) adapter
-    3) optimizer changes
-    '''
-    def __init__(self):
-        self.adapter = SklearnPytorchClassifier
-        self.module_name = 'sklearn'  # Rename the variable -- primal_framework
-        # self.modeling_frontend = 'sklearn' 
-        self.name = 'LogisticRegression'
-        self.version = 'V2'
-        self.modeling_backend = 'pytorch' ## proxy_framework
-        model_params = {'layer_1': {'units': 1, ## Make key name private - '_layer'
-                                    'l1': 0,
-                                    'l2': 0,
-                                    'activation': 'sigmoid'},
-                        'optimizer': 'adam',
-                        'loss': 'binary_crossentropy'
-                        } ## proxy_model_params
+# @registry.register
+# class PytorchLogisticRegression(GeneralizedLinearModel):
+#     '''
+#     Pending -
+#     1) create_model changes
+#     2) adapter
+#     3) optimizer changes
+#     '''
+#     def __init__(self):
+#         self.adapter = SklearnPytorchClassifier
+#         self.module_name = 'sklearn'  # Rename the variable -- primal_framework
+#         # self.modeling_frontend = 'sklearn'
+#         self.name = 'LogisticRegression'
+#         self.version = 'V2'
+#         self.modeling_backend = 'pytorch' ## proxy_framework
+#         model_params = {'layer_1': {'units': 1, ## Make key name private - '_layer'
+#                                     'l1': 0,
+#                                     'l2': 0,
+#                                     'activation': 'sigmoid'},
+#                         'optimizer': 'adam',
+#                         'loss': 'binary_crossentropy'
+#                         } ## proxy_model_params
 
-        self.set_params(params=model_params, set_by='model_init')
+#         self.set_params(params=model_params, set_by='model_init')
 
-    def create_model(self, **kwargs):
-        import torch
-        import torch.nn as nn
+#     def create_model(self, **kwargs):
+#         import torch
+#         import torch.nn as nn
 
-        n_in, n_h, n_out, batch_size = 10, 5, 1, 10
+#         n_in, n_h, n_out, batch_size = 10, 5, 1, 10
 
-        x = torch.randn(batch_size, n_in)
-        y = torch.tensor([[1.0], [0.0], [0.0], [1.0], [1.0], [1.0], [0.0], [0.0], [1.0], [1.0]])
+#         x = torch.randn(batch_size, n_in)
+#         y = torch.tensor([[1.0], [0.0], [0.0], [1.0], [1.0], [1.0], [0.0], [0.0], [1.0], [1.0]])
 
-        model = nn.Sequential(nn.Linear(n_in, n_out), nn.Sigmoid())
+#         model = nn.Sequential(nn.Linear(n_in, n_out), nn.Sigmoid())
 
-        criterion = torch.nn.MSELoss() ## try crossentropyloss instead
+#         criterion = torch.nn.MSELoss() ## try crossentropyloss instead
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+#         optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
-        return model
+#         return model
 
 @registry.register
 class LinearRegression(GeneralizedLinearModel):
@@ -301,10 +301,12 @@ class CART(GeneralizedLinearModel):
         else:
             cuts_per_feature = self.cuts_per_feature
 
-        if type(cuts_per_feature) not in (list, int):
+        # if type(cuts_per_feature) not in (list, int):
+        if not isinstance(cuts_per_feature, (list, int)):
             raise TypeError(
                 'cuts_per_feature should be of type `list` or `int`')
-        elif type(cuts_per_feature) is int:
+        # elif type(cuts_per_feature) is int:
+        elif isinstance(cuts_per_feature, int):
             if cuts_per_feature > np.ceil(self.X.shape[0]):
                 cuts_per_feature = [np.ceil(self.X.shape[0]) for i in range(
                     self.X.shape[1])]

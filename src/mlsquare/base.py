@@ -15,9 +15,9 @@ class Registry(object):
         module_name = model.module_name
         model_name = model.name
         version = model.version
-        try: ## Improve this flow. 
+        try: ## Improve this flow.
             self.data[(module_name, model_name)].update({version:[model, adapter]})
-        except:
+        except KeyError:
             self.data[(module_name, model_name)] = {version:[model, adapter]}
 
 
@@ -30,11 +30,11 @@ class BaseModel(ABC):
 	enc = None
 
 	@abstractmethod
-	def create_model(self):
+	def create_model(self, **kwargs):
 		raise NotImplementedError('Needs to be implemented!')
 
 	@abstractmethod
-	def set_params(self):
+	def set_params(self, **kwargs):
 		raise NotImplementedError('Needs to be implemented!')
 
 	@abstractmethod
@@ -42,7 +42,7 @@ class BaseModel(ABC):
 		raise NotImplementedError('Needs to be implemented!')
 
 	@abstractmethod
-	def update_params(self):
+	def update_params(self, params):
 		raise NotImplementedError('Needs to be implemented!')
 
 	@property

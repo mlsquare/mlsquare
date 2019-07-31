@@ -1,4 +1,4 @@
-from keras.layers import Layer 
+from keras.layers import Layer
 
 class Bin(Layer):
     """
@@ -17,7 +17,7 @@ class Bin(Layer):
 
     Note: This layer was initially created with the intention to be used in DecisionTree layer.
     We later realized that the DecisionTree layer was better off with a `binning` function rather than
-    a layer. Hence, it's not used in DecisionTree layer anymore. 
+    a layer. Hence, it's not used in DecisionTree layer anymore.
     The same applies to KronProd layer as well.
 
     """
@@ -69,16 +69,16 @@ class KronProd(Layer):
         super(KronProd, self).build(input_shape)
 
     def call(self, x):
-        from keras import backend as K # Fix
+        # from keras import backend as K # Fix
         import tensorflow as tf
-        from functools import reduce
+        # from functools import reduce
         input_tensor_list = x
-          
+
         def kron_prod(a,b):
           res = tf.einsum('ij,ik->ijk', a, b)
           res = tf.reshape(res, [-1, tf.reduce_prod(res.shape[1:])])
           return res
-        
+
         output = reduce(kron_prod, input_tensor_list)
         self.output_dim = output.get_shape().as_list()
 
@@ -141,8 +141,8 @@ class DecisionTree(Layer):
                                         initializer='uniform',
                                         trainable=True))
         super(DecisionTree, self).build(input_shape)
-        
-        
+
+
     def binning_fn(self,index_of_feature, num_of_cuts, x, temperature = 0.1):
         from keras import backend as K # Fix
         import tensorflow as tf
@@ -156,13 +156,13 @@ class DecisionTree(Layer):
         return output
 
     def call(self, x):
-      
+
       def kron_prod(a,b):
           import tensorflow as tf
           res = tf.einsum('ij,ik->ijk', a, b)
           res = tf.reshape(res, [-1, tf.reduce_prod(res.shape[1:])])
           return res
-      
+
       bin_result = []
       for i, value in enumerate(self.cuts_per_feature):
         bin_result.append(

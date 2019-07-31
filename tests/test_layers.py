@@ -1,4 +1,4 @@
-from mlsquare.layers import Bin, KronProd
+from mlsquare.layers import Bin
 import numpy as np
 from keras.layers import Input
 from keras.models import Model

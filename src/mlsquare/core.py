@@ -6,7 +6,6 @@ This is the base file that serves as the core of MLSquare's IMLY Module.
 This exposes the function `dope`. Dope transpiles any given model to it's DNN(Deep Neural Networks) equivalent.
 """
 
-import json
 import copy
 import sys
 from .utils.functions import _get_model_name, _get_module_name
@@ -60,7 +59,3 @@ def dope(primal_model, abstract_model=None, adapt=None, **kwargs): ## Rename mod
         print("Transpiling models using `%s` is not yet supported. We support 'dnn' as of now." % (
             kwargs['using']), file=sys.stderr)
         return primal_model
-
-'''
-1) Error handling at component level v/s dope/higher level -- back to the caller
-'''

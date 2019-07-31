@@ -1,5 +1,4 @@
 import keras
-import onnx
 import onnxruntime
 import pytest
 import numpy as np

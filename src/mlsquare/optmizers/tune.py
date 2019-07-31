@@ -1,6 +1,6 @@
 from ray import tune
 import ray
-from ray.tune.suggest import HyperOptSearch
+# from ray.tune.suggest import HyperOptSearch
 import os
 import numpy as np
 
@@ -9,13 +9,13 @@ ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_st
          num_cpus=4)
 
 ## Push this as a class with the package name. Ex - class tune(): pass
-def get_best_model(X, y, abstract_model, primal_data, **kwargs): 
+def get_best_model(X, y, abstract_model, primal_data, **kwargs):
     y_pred = np.array(primal_data['y_pred'])
     kwargs.setdefault('epochs', 250)
     kwargs.setdefault('batch_size', 40)
+    kwargs.setdefault('verbose', 0)
 
     def train_model(config, reporter): ## Change config name
-        print('epochs --- ', kwargs['epochs'])
         '''
         This function is used by Tune to train the model with each iteration variations.
 
@@ -27,7 +27,7 @@ def get_best_model(X, y, abstract_model, primal_data, **kwargs):
         '''
         abstract_model.set_params(params=config, set_by='optimizer')
         model = abstract_model.create_model()
-        model.fit(X, y_pred, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'], verbose=0) # Epochs should be configurable
+        model.fit(X, y_pred, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'], verbose=kwargs['verbose'])
         accuracy = model.evaluate(X, y_pred)[1]
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
@@ -45,7 +45,7 @@ def get_best_model(X, y, abstract_model, primal_data, **kwargs):
 
     metric = "mean_accuracy"
 
-    """Restore a model from the best trial."""
+    # Restore a model from the best trial.
     sorted_trials = get_sorted_trials(trials, metric)
     for best_trial in sorted_trials:
         try:

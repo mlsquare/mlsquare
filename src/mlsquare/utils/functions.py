@@ -20,7 +20,7 @@ def _parse_params(params, return_as):
             if key.split('_')[0] == 'layer': ## Add 'node' as valid prefix option
                 try:
                     edited_params[key.split('.')[0]].update({key.split('.')[1]:value})
-                except:
+                except KeyError:
                     edited_params.update({key.split('.')[0]:{key.split('.')[1]:value}})
             else:
                 edited_params.update({key:value})

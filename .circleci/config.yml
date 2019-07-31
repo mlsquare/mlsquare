@@ -22,7 +22,15 @@ jobs:
 
       - run:
           name: update setuptools version
-          command: pip install setuptools==41.0.1
+          command: pip install --user setuptools==41.0.1
+
+      - run:
+          name: update ray version
+          command: pip install --user ray==0.6.6
+
+      - run:
+          name: install onnxruntime
+          command: pip install --user onnxruntime==0.4.0
 
       - run:
           name: run build
