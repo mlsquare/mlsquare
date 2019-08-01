@@ -85,3 +85,7 @@ __ http://mlsquare.readthedocs.io
 
 
 We would love to hear your feedback. Drop us a mail at *info*[at]*mlsquare.org*
+
+.. image:: https://api.codacy.com/project/badge/Grade/d2c3adf3241e49309287cd1b20257dc7
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/shakkeel1330/mlsquare?utm_source=github.com&utm_medium=referral&utm_content=mlsquare/mlsquare&utm_campaign=Badge_Grade_Dashboard
