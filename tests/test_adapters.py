@@ -9,6 +9,18 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from mlsquare import registry
 from test_architectures import _load_classification_data, _load_regression_data
 
+def _run_adapter(dataset_loader, proxy_model, mock_adapt, primal_model):
+    x_train, x_test, y_train, y_test = dataset_loader()
+    model = mock_adapt(proxy_model, primal_model)
+    params = {'optimizer':{'grid_search':['adam', 'nadam']}}
+    epochs = 300
+    batch_size = 50
+    trained_model = model.fit(x_train, y_train, params=params, epochs=epochs, batch_size=batch_size)
+    score = model.score(x_test, y_test)
+    _pred = model.predict(x_test)
+    assert isinstance(trained_model, keras.engine.sequential.Sequential)
+    assert 0 <= score[1] <=1
+
 def test_sklearn_keras_classifier_basic_functionality():
     primal_model = LogisticRegression()
     proxy_model, mock_adapt = registry[('sklearn', 'LogisticRegression')]['default']
@@ -20,17 +32,7 @@ def test_sklearn_keras_classifier_basic_functionality():
 def test_sklearn_keras_classifier_test_methods_with_params():
     primal_model = LogisticRegression()
     proxy_model, mock_adapt = registry[('sklearn', 'LogisticRegression')]['default']
-
-    x_train, x_test, y_train, y_test = _load_classification_data()
-    model = mock_adapt(proxy_model, primal_model)
-    params = {'optimizer':{'grid_search':['adam', 'nadam']}}
-    epochs = 300
-    batch_size = 50
-    trained_model = model.fit(x_train, y_train, params=params, epochs=epochs, batch_size=batch_size)
-    score = model.score(x_test, y_test)
-    _pred = model.predict(x_test)
-    assert isinstance(trained_model, keras.engine.sequential.Sequential)
-    assert 0 <= score[1] <=1
+    _run_adapter(_load_classification_data, proxy_model, mock_adapt, primal_model)
 
 # def test_sklearn_keras_classifier_test_save():
 #     primal_model = LogisticRegression()
@@ -76,17 +78,7 @@ def test_sklearn_keras_regressor_basic_functionality():
 def test_sklearn_keras_regressor_test_methods_with_params():
     primal_model = LinearRegression()
     proxy_model, mock_adapt = registry[('sklearn', 'LinearRegression')]['default']
-
-    x_train, x_test, y_train, y_test = _load_regression_data()
-    model = mock_adapt(proxy_model, primal_model)
-    params = {'optimizer':{'grid_search':['adam', 'nadam']}}
-    epochs = 300
-    batch_size = 50
-    trained_model = model.fit(x_train, y_train, params=params, epochs=epochs, batch_size=batch_size)
-    score = model.score(x_test, y_test)
-    _pred = model.predict(x_test)
-    assert isinstance(trained_model, keras.engine.sequential.Sequential)
-    assert 0 <= score[1] <=1
+    _run_adapter(_load_regression_data, proxy_model, mock_adapt, primal_model)
 
 def test_sklearn_keras_regressor_with_inappropriate_params():
     primal_model = LinearRegression()
