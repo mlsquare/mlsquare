@@ -9,7 +9,7 @@
     :target: https://www.codacy.com/app/shakkeel1330/mlsquare?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mlsquare/mlsquare&amp;utm_campaign=Badge_Grade
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/mlsquare/mlsquare/master?filepath=https%3A%2F%2Fgithub.com%2Fmlsquare%2Fmlsquare%2Fblob%2Fmaster%2Fexamples%2Fimly.ipynb
+    :target: https://mybinder.org/v2/gh/mlsquare/mlsquare/master
 
 MLSquare is an open source developer-friendly Python library, designed to make use of Deep Learning for Machine Learning developers.
 
