@@ -1,14 +1,29 @@
 from abc import ABC, abstractmethod
 
-## Move to commons.decorator?
+
+
 class Registry(object):
+    """
+	This class is used to maintain a registry.
+
+    Parameters
+    ----------
+    data : dict
+        This variable holds the registry details.
+
+
+    Methods
+    -------
+	register(model)
+        Use this method to register a model in registry
+
+    """
+
 
     def __init__(self):
         # Variable name options -- model_data or model_info
         self.data = {}
-    # @staticmethod -- static or class - crosscheck
-    # Using static/class isn't feasible since the whole registry framework
-    # relies on an instance Registry class.
+
     def register(self, model):
         model = model()
         adapter = model.adapter
@@ -26,6 +41,37 @@ class Registry(object):
 
 
 class BaseModel(ABC):
+
+	"""
+	This class acts as 'Base' class for all models created in mlsquare.
+
+    Parameters
+    ----------
+    enc : sklearn.preprocessing.OneHotEncoder
+        The variable to hold OneHotEncoder instances passed by the model.
+
+
+    Methods
+    -------
+	create_model(**kwargs)
+        Method to return final dnn model.
+
+	set_params(**kwargs)
+        Method to set model parameters of proxy model.
+
+	get_params()
+        Method to read model parameters
+
+	update_params(params)
+        Method to update model parameters
+
+	adapter()
+        Getter and setter methods for adapter property.
+
+	transform_data(X, y, y_pred)
+        Method to transform data provided by the user.
+
+    """
 
 	enc = None
 

@@ -5,18 +5,57 @@ from ..utils.functions import _parse_params
 import pickle
 import onnxmltools
 import numpy as np
-## Python log module - log_info, log_error, log_debug, log_warn -- Data type conversion scenario
 
 class SklearnKerasClassifier():
-    def __init__(self, abstract_model, primal, **kwargs):
-        self.primal = primal
+    """
+	Adapter to connect sklearn classifier algorithms with keras models.
+
+    This class can be used as an adapter for any primal classifier that relies
+    on keras as the backend for proxy model.
+
+    Parameters
+    ----------
+    proxy_model : proxy model instance
+        The proxy model passed from dope.
+
+    primal_model : primal model instance
+        The primal model passed from dope.
+
+    params : dict, optional
+        Additional model params passed by the user.
+
+
+    Methods
+    -------
+	fit(X, y)
+        Method to train a transpiled model
+
+	save(filename)
+        Method to save a trained model. This method saves
+        the models in three formals -- pickle, h5 and onnx.
+        Expects 'filename' as a string.
+
+	score(X, y)
+        Method to score a trained model.
+
+	predict(X)
+        This method returns the predicted values for a 
+        trained model.
+
+	explain()
+        Method to provide model interpretations(Yet to be implemented)   
+
+    """
+
+    def __init__(self, proxy_model, primal_model, **kwargs):
+        self.primal_model = primal_model
         self.params = None ## Temporary!
-        self.abstract_model = abstract_model
+        self.proxy_model = proxy_model
 
     def fit(self, X, y, **kwargs):
         kwargs.setdefault('cuts_per_feature', None) ## Better way to handle?
 
-        self.abstract_model.cuts_per_feature = kwargs['cuts_per_feature'] ## For all models?
+        self.proxy_model.cuts_per_feature = kwargs['cuts_per_feature'] ## For all models?
         kwargs.setdefault('verbose', 0)
         kwargs.setdefault('params', self.params)
         kwargs.setdefault('space', False)
@@ -26,22 +65,22 @@ class SklearnKerasClassifier():
         X = np.array(X)
         y = np.array(y)
 
-        primal_model = self.primal
+        primal_model = self.primal_model
         primal_model.fit(X, y)
         y_pred = primal_model.predict(X)
 
-        X, y, y_pred = self.abstract_model.transform_data(X, y, y_pred)
+        X, y, y_pred = self.proxy_model.transform_data(X, y, y_pred)
 
         # This should happen only after transformation.
-        self.abstract_model.X = X ##  abstract -> model_skeleton
-        self.abstract_model.y = y
-        self.abstract_model.primal = self.primal
+        self.proxy_model.X = X ##  abstract -> model_skeleton
+        self.proxy_model.y = y
+        self.proxy_model.primal = self.primal_model
 
         if self.params != None: ## Validate implementation with different types of tune input
             if not isinstance(self.params, dict):
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
-            self.abstract_model.update_params(self.params)
+            self.proxy_model.update_params(self.params)
 
         primal_data = { ## Consider renaming -- primal_model_data or primal_results
             'y_pred': y_pred,
@@ -49,7 +88,7 @@ class SklearnKerasClassifier():
         }
 
         ## Search for best model using Tune ##
-        self.final_model = get_best_model(X, y, abstract_model = self.abstract_model,
+        self.final_model = get_best_model(X, y, proxy_model = self.proxy_model,
                                             primal_data=primal_data, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
                                             verbose=kwargs['verbose'])
         return self.final_model  # Return self? IMPORTANT
@@ -67,15 +106,15 @@ class SklearnKerasClassifier():
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
     def score(self, X, y, **kwargs):
-        if self.abstract_model.enc is not None:
+        if self.proxy_model.enc is not None:
             ## Should we accept pandas?
             y = np.array(y)
             X = np.array(X)
             if len(y.shape) == 1 or y.shape[1] == 1:
-                y = self.abstract_model.enc.transform(y.reshape(-1,1))
+                y = self.proxy_model.enc.transform(y.reshape(-1,1))
                 y = y.toarray() ## Cross check with logistic regression flow
             else:
-                y = self.abstract_model.enc.transform(y)
+                y = self.proxy_model.enc.transform(y)
                 y = y.toarray()
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
@@ -100,15 +139,55 @@ class SklearnKerasClassifier():
 
 
 class SklearnKerasRegressor():
-    def __init__(self, abstract_model, primal, **kwargs):
-        self.primal = primal
-        self.abstract_model = abstract_model
+    """
+	Adapter to connect sklearn regressor algorithms with keras models.
+
+    This class can be used as an adapter for any primal regressor that relies
+    on keras as the backend for proxy model.
+
+    Parameters
+    ----------
+    proxy_model : proxy model instance
+        The proxy model passed from dope.
+
+    primal_model : primal model instance
+        The primal model passed from dope.
+
+    params : dict, optional
+        Additional model params passed by the user.
+
+
+    Methods
+    -------
+	fit(X, y)
+        Method to train a transpiled model
+
+	save(filename)
+        Method to save a trained model. This method saves
+        the models in three formals -- pickle, h5 and onnx.
+        Expects 'filename' as a string.
+
+	score(X, y)
+        Method to score a trained model.
+
+	predict(X)
+        This method returns the predicted values for a 
+        trained model.
+
+	explain()
+        Method to provide model interpretations(Yet to be implemented)   
+
+    """
+
+    def __init__(self, proxy_model, primal_model, **kwargs):
+        self.primal_model = primal_model
+        self.proxy_model = proxy_model
         self.params = None
 
     def fit(self, X, y, **kwargs):
-        self.abstract_model.X = X
-        self.abstract_model.y = y
-        self.abstract_model.primal = self.primal
+        self.proxy_model.X = X
+        self.proxy_model.y = y
+        self.proxy_model.primal = self.primal_model
         kwargs.setdefault('verbose', 0)
         kwargs.setdefault('epochs', 250)
         kwargs.setdefault('batch_size', 30)
@@ -119,8 +198,8 @@ class SklearnKerasRegressor():
             if not isinstance(self.params, dict):
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
-            self.abstract_model.update_params(self.params)
-        primal_model = self.primal
+            self.proxy_model.update_params(self.params)
+        primal_model = self.primal_model
         primal_model.fit(X, y)
         y_pred = primal_model.predict(X)
         primal_data = {
@@ -128,7 +207,7 @@ class SklearnKerasRegressor():
             'model_name': primal_model.__class__.__name__
         }
 
-        self.final_model = get_best_model(X, y, abstract_model=self.abstract_model, primal_data=primal_data,
+        self.final_model = get_best_model(X, y, proxy_model=self.proxy_model, primal_data=primal_data,
                                           epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
                                           verbose=kwargs['verbose'])
         return self.final_model  # Not necessary.
@@ -159,19 +238,19 @@ class SklearnKerasRegressor():
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
 class SklearnPytorchClassifier():
-    def __init__(self, abstract_model, primal, **kwargs):
-        self.primal = primal
+    def __init__(self, proxy_model, primal_model, **kwargs):
+        self.primal_model = primal_model
         self.params = None ## Temporary!
-        self.abstract_model = abstract_model
+        self.proxy_model = proxy_model
 
     def fit(self, X, y, **kwargs):
-        self.abstract_model.X = X
-        self.abstract_model.y = y
-        self.abstract_model.primal = self.primal
+        self.proxy_model.X = X
+        self.proxy_model.y = y
+        self.proxy_model.primal = self.primal_model
 
         for epoch in range(50):
             # Forward Propagation
-            # Access model, criterion and optimizer from abstract_model
+            # Access model, criterion and optimizer from proxy_model
             # Alter how tune computes `fit`. Override keras_model.fit option
             y_pred = model(x)    # Compute and print loss
             loss = criterion(y_pred, y)
@@ -183,3 +262,8 @@ class SklearnPytorchClassifier():
 
             # Update the parameters
             optimizer.step()
+
+
+# TODO
+# predict_proba implementation
+# filter_sklearn_params method

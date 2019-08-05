@@ -9,7 +9,7 @@ ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_st
          num_cpus=4)
 
 ## Push this as a class with the package name. Ex - class tune(): pass
-def get_best_model(X, y, abstract_model, primal_data, **kwargs):
+def get_best_model(X, y, proxy_model, primal_data, **kwargs):
     y_pred = np.array(primal_data['y_pred'])
     kwargs.setdefault('epochs', 250)
     kwargs.setdefault('batch_size', 40)
@@ -25,8 +25,8 @@ def get_best_model(X, y, abstract_model, primal_data, **kwargs):
             reporter: A function used by Tune to keep a track of the metric by
             which the iterations should be optimized.
         '''
-        abstract_model.set_params(params=config, set_by='optimizer')
-        model = abstract_model.create_model()
+        proxy_model.set_params(params=config, set_by='optimizer')
+        model = proxy_model.create_model()
         model.fit(X, y_pred, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'], verbose=kwargs['verbose'])
         accuracy = model.evaluate(X, y_pred)[1]
         last_checkpoint = "weights_tune_{}.h5".format(config)
@@ -38,7 +38,7 @@ def get_best_model(X, y, abstract_model, primal_data, **kwargs):
                                     run=train_model,
                                     resources_per_trial={"cpu": 4},
                                     stop={"mean_accuracy": 95},
-                                    config=abstract_model.get_params())
+                                    config=proxy_model.get_params())
                                     # config=kwargs['params'])
 
     trials = tune.run_experiments(configuration, verbose=2)
@@ -50,8 +50,8 @@ def get_best_model(X, y, abstract_model, primal_data, **kwargs):
     for best_trial in sorted_trials:
         try:
             print("Creating model...")
-            abstract_model.set_params(params=best_trial.config, set_by='optimizer')
-            best_model = abstract_model.create_model()
+            proxy_model.set_params(params=best_trial.config, set_by='optimizer')
+            best_model = proxy_model.create_model()
             weights = os.path.join(
                 best_trial.logdir, best_trial.last_result["checkpoint"])
             print("Loading from", weights)

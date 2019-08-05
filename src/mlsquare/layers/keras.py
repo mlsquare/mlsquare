@@ -99,28 +99,36 @@ class DecisionTree(Layer):
 
     Note: The input expected is of rank 2.
 
-    # Arguments
-        cuts_per_feature: List of integers, each integer is the number
-        of cuts to be made on it's corresponding feature.
+    Parameters
+    ----------
+        cuts_per_feature: list, int
+        This variable can either be a list of integers or a single integer.
+        If passed as a list, each integer is the number of cuts to be made on
+        it's corresponding feature.
+        If passed as an integer, that many number of cuts are made, consistently 
+        for each feature.
 
 
-    # Example
+    Examples
+    --------
 
         # Creating a model with DecisionTree layer using
         # Keras functional API
-        visible = Input(shape=(4,))
-        hidden_layer = DecisionTree(cuts_per_feature=[1,1,1,1])(visible)
-        output = Dense(3, activation='sigmoid')(hidden_layer)
-        model = Model(inputs=visible, ouputs=output)
+        >>> visible = Input(shape=(4,))
+        >>> hidden_layer = DecisionTree(cuts_per_feature=[1,1,1,1])(visible)
+        >>> output = Dense(3, activation='sigmoid')(hidden_layer)
+        >>> model = Model(inputs=visible, ouputs=output)
 
         # The above model accepts an input with (None, 4) shape. The Decsion tree layer
         # then provides an output of shape (None, 16) - 2 bins per feature in this scenario.
         # The model then applies a regular 'Dense' layer to this output.
 
-    # Input
+    Input
+    -----
         2D tensor with shape: `(batch_size, num_of_feature)`.
 
-    # Output
+    Output
+    ------
         2D tensor with shape: `(batch_size, num_of_bins)`.
         num_of_bins = prod(cuts_per_feature + 1)
     """

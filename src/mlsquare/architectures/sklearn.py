@@ -14,6 +14,30 @@ from ..utils.functions import _parse_params
 
 
 class GeneralizedLinearModel(BaseModel):
+    """
+	A base class for all generalized linear models.
+
+    This class can be used as a base class for any glm models.
+    While implementing ensure all required parameters are over written
+    with the respective models values. Please refer to LogisticRegression or
+    LinearRegression for implementation details.
+
+    Methods
+    -------
+	create_model(model_params)
+        This method contains the base template for glm models
+
+	set_params(params)
+        Method to set model parameters. This method handles the
+        flattening of params as well.
+
+	get_params()
+        Method to read params.
+
+	update_params(params)
+        Method to update params.  
+
+    """
 
     def create_model(self, **kwargs):
 
