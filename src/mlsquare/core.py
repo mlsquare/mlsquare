@@ -61,9 +61,9 @@ def dope(primal_model, proxy_model=None, adapter=None, **kwargs): ## Rename mode
             raise ValueError('Please pass a valid adapter for your primal model')
         elif proxy_model == None and adapter != None:
             raise ValueError('Please pass a valid primal model with your adapter')
-        else:
-            print("Transpiling your model to it's Deep Neural Network equivalent...", file=sys.stderr)
-            model = adapter(proxy_model=proxy_model, primal_model=primal)
+
+        print("Transpiling your model to it's Deep Neural Network equivalent...", file=sys.stderr)
+        model = adapter(proxy_model=proxy_model, primal_model=primal)
 
         return model
     else:
