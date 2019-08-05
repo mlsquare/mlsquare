@@ -15,7 +15,5 @@ __author__ = "MLSquare"
 __copyright__ = "MLSquare"
 __license__ = "mit"
 
-## Earlier available in imly's __init__ ##
 from .core import dope
-from .architectures.sklearn import LogisticRegression, LinearRegression
 from .base import registry

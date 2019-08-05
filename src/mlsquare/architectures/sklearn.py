@@ -35,7 +35,7 @@ class GeneralizedLinearModel(BaseModel):
         Method to read params.
 
 	update_params(params)
-        Method to update params.  
+        Method to update params.
 
     """
 

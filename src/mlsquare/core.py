@@ -57,9 +57,13 @@ def dope(primal_model, proxy_model=None, adapter=None, **kwargs): ## Rename mode
             except KeyError:
                 # raise TypeError('Model type `%s` is not supported by mlsquare yet.' % (type(primal_model)))
                 raise TypeError('Unsupported model or version. Please check your model type and version' % (type(primal_model)))
-
-        print("Transpiling your model to it's Deep Neural Network equivalent...", file=sys.stderr)
-        model = adapter(proxy_model=proxy_model, primal_model=primal) # Change to adapter?
+        elif proxy_model != None and adapter == None:
+            raise ValueError('Please pass a valid adapter for your primal model')
+        elif proxy_model == None and adapter != None:
+            raise ValueError('Please pass a valid primal model with your adapter')
+        else:
+            print("Transpiling your model to it's Deep Neural Network equivalent...", file=sys.stderr)
+            model = adapter(proxy_model=proxy_model, primal_model=primal)
 
         return model
     else:

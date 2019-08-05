@@ -105,7 +105,7 @@ class DecisionTree(Layer):
         This variable can either be a list of integers or a single integer.
         If passed as a list, each integer is the number of cuts to be made on
         it's corresponding feature.
-        If passed as an integer, that many number of cuts are made, consistently 
+        If passed as an integer, that many number of cuts are made, consistently
         for each feature.
 
 

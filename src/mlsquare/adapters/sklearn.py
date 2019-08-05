@@ -39,11 +39,11 @@ class SklearnKerasClassifier():
         Method to score a trained model.
 
 	predict(X)
-        This method returns the predicted values for a 
+        This method returns the predicted values for a
         trained model.
 
 	explain()
-        Method to provide model interpretations(Yet to be implemented)   
+        Method to provide model interpretations(Yet to be implemented)
 
     """
 
@@ -171,11 +171,11 @@ class SklearnKerasRegressor():
         Method to score a trained model.
 
 	predict(X)
-        This method returns the predicted values for a 
+        This method returns the predicted values for a
         trained model.
 
 	explain()
-        Method to provide model interpretations(Yet to be implemented)   
+        Method to provide model interpretations(Yet to be implemented)
 
     """
 
