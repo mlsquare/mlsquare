@@ -2,23 +2,17 @@
 [ML]² :  Machine Learning for Machine Learning
 ========
 
-|contributors| |activity|
+.. image:: https://circleci.com/gh/mlsquare/mlsquare/tree/dev.svg?style=svg
+    :target: https://circleci.com/gh/mlsquare/mlsquare/tree/dev
 
-.. |contributors| image:: https://img.shields.io/github/contributors/mlsquare/mlsquare.svg
-  :alt: contributors
-  :target: https://github.com/mlsquare/mlsquare/graphs/contributors
+.. image:: https://api.codacy.com/project/badge/Grade/5b23c72bf17246e6b3df610a798f8935
+    :target: https://www.codacy.com/app/shakkeel1330/mlsquare?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mlsquare/mlsquare&amp;utm_campaign=Badge_Grade
 
-.. |activity| image:: https://img.shields.io/github/commit-activity/m/mlsquare/mlsquare.svg
-  :alt: activity
-  :target: https://github.com/mlsquare/mlsquare/pulse
+.. image:: https://api.codacy.com/project/badge/Coverage/5b23c72bf17246e6b3df610a798f8935
+    :target: https://www.codacy.com/app/shakkeel1330/mlsquare?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mlsquare/mlsquare&amp;utm_campaign=Badge_Coverage
 
-.. |last_commit| image:: https://img.shields.io/github/last-commit/mlsquare/mlsquare.svg
-  :alt: last_commit
-  :target: https://github.com/mlsquare/mlsquare/commits/master
-
-.. |size| image:: https://img.shields.io/github/repo-size/mlsquare/mlsquare.svg
-  :alt: size
-
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/mlsquare/mlsquare/master
 
 MLSquare is an open source developer-friendly Python library, designed to make use of Deep Learning for Machine Learning developers.
 

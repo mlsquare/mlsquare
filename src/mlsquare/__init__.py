@@ -14,3 +14,6 @@ finally:
 __author__ = "MLSquare"
 __copyright__ = "MLSquare"
 __license__ = "mit"
+
+from .core import dope
+from .base import registry

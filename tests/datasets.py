@@ -28,7 +28,7 @@ def _load_diabetes():
 def _load_iris():
     data = pd.read_csv('./datasets/iris.csv', delimiter=",",
                        header=None, index_col=False)
-    class_name, index = np.unique(data.iloc[:, -1], return_inverse=True)
+    _, index = np.unique(data.iloc[:, -1], return_inverse=True)
     data.iloc[:, -1] = index
     data = data.loc[data[4] != 2]
     X = data.iloc[:, :-1]
@@ -52,7 +52,7 @@ def _load_salary():
                        'relationship', 'race', 'sex', 'native-country', 'target']
 
     for col in categorical_col:
-        b, c = np.unique(data[col], return_inverse=True)
+        _, c = np.unique(data[col], return_inverse=True)
         data[col] = c
 
     feature_list = names[:14]

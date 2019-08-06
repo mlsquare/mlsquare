@@ -1,28 +1,21 @@
 from ray import tune
 import ray
-from ray.tune.suggest import HyperOptSearch
+# from ray.tune.suggest import HyperOptSearch
 import os
-from ..architectures import ModelMiddleware
-# from tensorflow import set_random_seed
-# from numpy.random import seed
-
-# seed(3)
-# set_random_seed(3)
+import numpy as np
 
 # Initialize ray
 ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
          num_cpus=4)
 
+## Push this as a class with the package name. Ex - class tune(): pass
+def get_best_model(X, y, proxy_model, primal_data, **kwargs):
+    y_pred = np.array(primal_data['y_pred'])
+    kwargs.setdefault('epochs', 250)
+    kwargs.setdefault('batch_size', 40)
+    kwargs.setdefault('verbose', 0)
 
-def get_best_model(x_train, y_train, **kwargs):
-    y_pred = kwargs['primal_data']['y_pred']
-    model_name = kwargs['primal_data']['model_name']
-    # build_fn constructed earlier is passed as an argument to avoid recomputation of the same again.
-    mapping_instance = kwargs['build_fn'] # Rename mapping_instance dnn_instance
-
-    kwargs.setdefault('space', False)
-
-    def train_model(config, reporter):
+    def train_model(config, reporter): ## Change config name
         '''
         This function is used by Tune to train the model with each iteration variations.
 
@@ -32,12 +25,12 @@ def get_best_model(x_train, y_train, **kwargs):
             reporter: A function used by Tune to keep a track of the metric by
             which the iterations should be optimized.
         '''
-
-        model = mapping_instance.__call__(x_train=x_train, params=config)
-        model.fit(x_train, y_pred)
+        proxy_model.set_params(params=config, set_by='optimizer')
+        model = proxy_model.create_model()
+        model.fit(X, y_pred, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'], verbose=kwargs['verbose'])
+        accuracy = model.evaluate(X, y_pred)[1]
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
-        accuracy = model.evaluate(x_train, y_pred)[1]
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
 
     # Define experiment configuration
@@ -45,33 +38,20 @@ def get_best_model(x_train, y_train, **kwargs):
                                     run=train_model,
                                     resources_per_trial={"cpu": 4},
                                     stop={"mean_accuracy": 95},
-                                    config=kwargs['params'])
+                                    config=proxy_model.get_params())
+                                    # config=kwargs['params'])
 
-    # This validation is to check if the user has opted for hyperopt search method
-    if kwargs['space']:
-        print('hyperopt choosen') # Remove or replace with a better message
-        space = kwargs['space']
-        hyperopt_search = HyperOptSearch(space, reward_attr="mean_accuracy")
-        # TODO
-        # Should this wrapper be avoided(instead the user passes the HyperOptSearch).
-        # Add other args for hyperopt search.
-        # Add the remaining search_algos if necessary.
-        trials = tune.run_experiments(configuration,
-                                      search_alg=hyperopt_search, verbose=2)
-
-    else:
-        trials = tune.run_experiments(configuration, verbose=2)
+    trials = tune.run_experiments(configuration, verbose=2)
 
     metric = "mean_accuracy"
 
-    """Restore a model from the best trial."""
+    # Restore a model from the best trial.
     sorted_trials = get_sorted_trials(trials, metric)
     for best_trial in sorted_trials:
         try:
             print("Creating model...")
-            best_model = mapping_instance.__call__(
-                x_train=x_train, params=best_trial.config)  # TODO Pass config as argument
-            # best_model = make_model(None)
+            proxy_model.set_params(params=best_trial.config, set_by='optimizer')
+            best_model = proxy_model.create_model()
             weights = os.path.join(
                 best_trial.logdir, best_trial.last_result["checkpoint"])
             print("Loading from", weights)
@@ -94,3 +74,14 @@ def get_sorted_trials(trial_list, metric):
 # Generalize metric choice.
 # Add compatibility for linReg and LDA.
 # Validate the loaded model(How?).
+
+
+        # model_params = { 'units': 1,
+        #                 'input_dim': 2,
+        #                 'activation': ['sigmoid', 'linear'],
+        #                 'optimizer': 'adam',
+        #                 'loss': 'binary_crossentropy'
+        #                 }
+
+# estimation params
+# model params

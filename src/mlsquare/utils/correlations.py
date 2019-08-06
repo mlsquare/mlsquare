@@ -9,7 +9,7 @@ def concordance_correlation_coefficient(y_true, y_pred,
     It measures the deviation of the relationship between predicted and true values
     from the 45 degree angle.
     Read more: https://en.wikipedia.org/wiki/Concordance_correlation_coefficient
-    Original paper: Lawrence, I., and Kuei Lin. "A concordance correlation coefficient to evaluate reproducibility." Biometrics (1989): 255-268.  
+    Original paper: Lawrence, I., and Kuei Lin. "A concordance correlation coefficient to evaluate reproducibility." Biometrics (1989): 255-268.
     Parameters
     ----------
     y_true : array-like of shape = (n_samples) or (n_samples, n_outputs)
@@ -31,18 +31,18 @@ def concordance_correlation_coefficient(y_true, y_pred,
     https://github.com/stylianos-kampakis/supervisedPCA-Python
     """
     cor = np.corrcoef(y_true, y_pred)[0][1]
-    
+
     mean_true = np.mean(y_true)
     mean_pred = np.mean(y_pred)
-    
+
     var_true = np.var(y_true)
     var_pred = np.var(y_pred)
-    
+
     sd_true = np.std(y_true)
     sd_pred = np.std(y_pred)
-    
+
     numerator = 2*cor*sd_true*sd_pred
-    
+
     denominator = var_true+var_pred+(mean_true-mean_pred)**2
 
     return numerator/denominator
