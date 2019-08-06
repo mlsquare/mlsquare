@@ -57,7 +57,7 @@ def get_best_model(X, y, proxy_model, primal_data, **kwargs):
             print("Loading from", weights)
             # TODO Validate this loaded model.
             best_model.load_weights(weights)
-            break ## ??
+            break
         except Exception as e:
             print(e)
             print("Loading failed. Trying next model")
@@ -71,8 +71,8 @@ def get_sorted_trials(trial_list, metric):
     return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0), reverse=True)
 
 # TODO
-# Looks like the get_sorted_trials function is behaving at times.
-# It returns the "worst" model instead of the "best". Check why this happens.
+# Generalize metric choice.
+# Add compatibility for linReg and LDA.
 # Validate the loaded model(How?).
 
 
