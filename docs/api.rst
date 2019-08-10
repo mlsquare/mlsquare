@@ -2,4 +2,6 @@
 API Reference
 =============
 
-.. autofunction:: mlsquare.imly.dope
+.. autofunction:: mlsquare.dope
+
+.. autofunction:: mlsquare.architectures

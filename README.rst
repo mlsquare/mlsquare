@@ -14,8 +14,8 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/mlsquare/mlsquare/master
 
-MLSquare is an open source developer-friendly Python library, designed to make use of Deep Learning for Machine Learning developers.
-
+ML Square is python library that utilises deep learning techniques to enable interoperability 
+between existing standard machine learning frameworks.
 
 ================
 Getting Started!
@@ -63,14 +63,22 @@ Setting up ``mlsquare`` is simple and easy
         >>> m.fit(x_train, y_train)
         >>> m.score(x_test, y_test)
 
-================
+========
 Tutorial
-================
+========
 
 For a comprehensive tutorial please do checkout this `link`__
 
 __ https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
 
+
+==========
+Contribute
+==========
+
+To get started with contributing, refer our devoloper guide `here`__
+
+__https://github.com/mlsquare/mlsquare/blob/master/docs/developer.rst
 
 
 For detailed documentation refer `documentation`__
@@ -78,4 +86,4 @@ For detailed documentation refer `documentation`__
 __ http://mlsquare.readthedocs.io
 
 
-We would love to hear your feedback. Drop us a mail at *info*[at]*mlsquare.org*
+We would love to hear your feedback. Drop us a mail at *info@mlsquare.org*

@@ -17,3 +17,4 @@ __license__ = "mit"
 
 from .core import dope
 from .base import registry
+from .architectures import sklearn
