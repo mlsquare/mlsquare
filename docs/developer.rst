@@ -51,27 +51,23 @@ The `architectures` folder consists of all existing algorithm mappings. Each .py
 Implementation
 --------------
 
-1. Each algorithm is expected to be declared as a class. An algorithm should be registered in the `registry`(check FAQs for details)
-   using the @registry.register decorator.
+1. Each algorithm is expected to be declared as a class. An algorithm should be registered in the ``registry`` (check FAQs for details) using the @registry.register decorator.
 
-2. Use the base class available in `base.py <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/base.py#L43>` as the parent class for your algorithm. Feel free to use an already existing base class(ex - `glm <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/architectures/sklearn.py#L16>`)
+2. Use the base class available in `base.py <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/base.py#L43>`__ as the parent class for your algorithm. Feel free to use an already existing base class(ex - `glm <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/architectures/sklearn.py#L16>`__)
    if it matches your algorithm's needs.
 
 3. The following methods and attributes are expected to implemented while creating a new model,
-    `create_model()` - Your models architecture lies in this method. Calling this method would return a compiled
-    dnn model(ex - keras or pytorch model).
-    `set_params()` - The conventions followed by mlsquare in defining model parameters are mentioned below. This method should
-    handle the "flattening" of parameters.
-    `get_params()` - Calling this method should simply return the models existing parameters.
-    `update_params()` - This method should enable updating the model parameters for an instantiated model.
-    `adapter` - This attribute should contain the adapter choice you have made for your algorithm.
-    `module_name` - The primal module name(should be a string)
-    `name` - Name that you wish the model should be reffered by.
-    `version` - If an implementation exists for your algorithm and you wish to improve it by a different
-    implementation, make sure you add a meaningful version number.
-    `model_params` - The parameters required to compile your model. Conventions to be followed are mentioned below.
+    - ``create_model()`` - Your models architecture lies in this method. Calling this method would return a compiled dnn model(ex - keras or pytorch model).
+    - `set_params()` - The conventions followed by mlsquare in defining model parameters are mentioned below. This method should handle the "flattening" of parameters.
+    - `get_params()` - Calling this method should simply return the models existing parameters.
+    - `update_params()` - This method should enable updating the model parameters for an instantiated model.
+    - `adapter` - This attribute should contain the adapter choice you have made for your algorithm.
+    - `module_name` - The primal module name(should be a string)
+    - `name` - Name that you wish the model should be reffered by.
+    - `version` - If an implementation exists for your algorithm and you wish to improve it by a different implementation, make sure you add a meaningful version number.
+    - `model_params` - The parameters required to compile your model. Conventions to be followed are mentioned below.
 
--------------------
+--------------------
 Notes on conventions
 --------------------
 
@@ -84,7 +80,7 @@ Notes on conventions
 3. Sample parameter - The below sample shows the parameters for a keras model with 2 layer(both hidden and visible),
     .. code-block:: python
 
-    model_params = {'layer_1': {'units': 1, 'activation': 'sigmoid'},
+     model_params = {'layer_1': {'units': 1, 'activation': 'sigmoid'},
                     'layer_2': {'activation':'softmax'}
                     'optimizer': 'adam',
                     'loss': 'binary_crossentropy'
@@ -98,8 +94,8 @@ Sample implementation
 
     .. code-block:: python
 
-    class MyBaseModel(GeneralizedLinearModel):
-    def create_model(self, **kwargs):
+     class MyBaseModel(GeneralizedLinearModel):
+      def create_model(self, **kwargs):
         ## To parse your model from 'flattened' to 'nested'
         model_params = _parse_params(self._model_params, return_as='nested')
 
