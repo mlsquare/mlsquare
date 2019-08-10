@@ -67,23 +67,16 @@ Setting up ``mlsquare`` is simple and easy
 Tutorial
 ========
 
-For a comprehensive tutorial please do checkout this `link`__
-
-__ https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
-
+For a comprehensive tutorial please do checkout this `link <https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb>`__
 
 ==========
 Contribute
 ==========
 
-To get started with contributing, refer our devoloper guide `here`__
-
-__https://github.com/mlsquare/mlsquare/blob/master/docs/developer.rst
+To get started with contributing, refer our devoloper guide `here <https://github.com/mlsquare/mlsquare/blob/master/docs/developer.rst>`__
 
 
-For detailed documentation refer `documentation`__
-
-__ http://mlsquare.readthedocs.io
+For detailed documentation refer `documentation <http://mlsquare.readthedocs.io>`__
 
 
 We would love to hear your feedback. Drop us a mail at *info@mlsquare.org*
