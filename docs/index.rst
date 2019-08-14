@@ -20,7 +20,6 @@ __ http://python.org/
 
     __ http://mlsquare.org
 
-In the first version we come up with **Interoperable Machine Learning [IMLY]**. `IMLY` is aimed to provide every Machine Learning Algorithm with an equivalent DNN Implementation.
 
 Getting Started!
 ================
@@ -44,7 +43,7 @@ Setting up :py:mod:`mlsquare` is simple and easy
 
     .. code-block:: python
 
-        >>> from mlsquare.imly import dope
+        >>> from mlsquare import dope
         >>> from sklearn.linear_model import LinearRegression
         >>> from sklearn.preprocessing import StandardScaler
         >>> from sklearn.model_selection import train_test_split
