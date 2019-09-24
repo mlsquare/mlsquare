@@ -79,12 +79,35 @@ def mse_in_theano(y_true, y_pred):
     return T.mean(T.square(y_pred - y_true), axis=-1)
 
 
-def quantile_loss(y_true, y_pred,quantile=0.5):
-    from keras import backend as K
-    e = y_pred-y_true
-    Ie = (K.sign(e)+1)/2
-    return K.mean(e*(quantile-Ie),axis=-1)
+def quantile_loss(quantile=0.5):
+    def loss(y_true, y_pred,quantile=quantile):
+        from keras import backend as K
+        e = y_pred-y_true
+        Ie = (K.sign(e)+1)/2
+        return K.mean(e*(Ie-quantile),axis=-1)
+    return loss
     
+# https://stats.stackexchange.com/questions/249874/the-issue-of-quantile-curves-crossing-each-other    
+def quantile_ensemble_loss(quantile=0.5,margin=0,alpha=0):
+    
+    def loss(y_true, y_pred, q=quantile,margin=margin,alpha=alpha):
+        from keras import backend as K
+        error = y_true - y_pred
+        quantile_loss = K.mean(K.maximum(q*error, (q-1)*error))
+        diff = y_pred[:, 1:] - y_pred[:, :-1]
+        penalty = K.mean(K.maximum(0.0, margin - diff)) * alpha
+        return quantile_loss + penalty
+    return loss
+
+def ordinal_loss(margin=0,alpha=0):
+    
+    def loss(y_true,y_pred, margin=margin,alpha=alpha):
+        from keras import backend as K
+        diff = y_pred[:, 1:] - y_pred[:, :-1]
+        penalty = K.mean(K.maximum(0.0, margin - diff)) * alpha
+        return penalty
+    return loss
+
 
 
 
