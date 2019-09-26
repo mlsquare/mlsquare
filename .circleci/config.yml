@@ -26,7 +26,7 @@ jobs:
 
       - run:
           name: update ray version
-          command: pip install --user ray==0.6.6
+          command: pip install --user ray==0.6.5
 
       - run:
           name: install onnxruntime
