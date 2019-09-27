@@ -11,7 +11,7 @@ def numpy_unique(a):
     return np.unique(a)
 
 
-def lda_loss(n_components, margin):
+def lda_theano_loss(n_components, margin):
     """
     The main loss function (inner_lda_objective) is wrapped in this function due to
     the constraints imposed by Keras on objective functions
@@ -108,7 +108,7 @@ def ordinal_loss(margin=0,alpha=0):
         return penalty
     return loss
 
-def lda_loss(n_components, margin,method='between_scatter'):
+def lda_loss(n_components, margin=0,method='raleigh_coeff'):
     """
     The main loss function (inner_lda_objective) is wrapped in this function due to
     the constraints imposed by Keras on objective functions
@@ -126,7 +126,7 @@ def lda_loss(n_components, margin,method='between_scatter'):
         https://github.com/CPJKU/deep_lda
         Note: it is implemented by Theano tensor operations, and does not work on Tensorflow backend
         """
-        
+        r = 1e-4
         locations = tf.where(tf.equal(y_true, 1))
         indices = locations[:, 1]
         y, idx = tf.unique(indices)
@@ -165,7 +165,7 @@ def lda_loss(n_components, margin,method='between_scatter'):
 
         if method == 'raleigh_coeff':
             # minimize the -ve of Raleigh coefficient
-            r = 1e-4
+            r = 1e-3
             cho = tf.cholesky(St_t + tf.eye(dim) * r)
             inv_cho = tf.matrix_inverse(cho)
             evals_t = tf.linalg.eigvalsh(tf.transpose(inv_cho) * Sb_t * inv_cho)  # Sb_t, St_t # SIMPLIFICATION OF THE EQP USING cholesky    
