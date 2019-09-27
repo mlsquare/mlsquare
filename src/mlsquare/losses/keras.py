@@ -119,6 +119,7 @@ def lda_loss(n_components, margin=0,method='raleigh_coeff'):
     # refs
     # https://arxiv.org/pdf/1903.11240.pdf
     # https://arxiv.org/pdf/1906.02590.pdf
+    # https://papers.nips.cc/paper/1210-self-organizing-and-adaptive-algorithms-for-generalized-eigen-decomposition.pdf
     def inner_lda_objective(y_true, y_pred):
         """
         It is the loss function of LDA as introduced in the original paper.
@@ -177,6 +178,15 @@ def lda_loss(n_components, margin=0,method='raleigh_coeff'):
             cost_min = tf.boolean_mask(top_k_evals, mask_min)
             cost -tf.reduce_mean(cost_min)
             return 
+        elif method == 'trace':
+            # maximize the trace(Sw^-1 * Sb)
+            cost = -tf.linalg.trace(tf.matrix_inv(Sw_t)*Sb_t)
+            
+        elif method == 'det_ratio':
+            # maximze the ratio of det of between/ within scatter
+            cost = -tf.math.divide(tf.linalg.det(Sb_t),tf.linalg.det(Sw_t))
+        
+        
         elif method == 'trace_ratio':
             # minimize the -ve of ratio of trace of betwwen to witin scatter
             cost = -tf.math.divide(tf.linalg.trace(Sb_t),tf.linalg.trace(Sw_t))
