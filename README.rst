@@ -40,7 +40,7 @@ Setting up ``mlsquare`` is simple and easy
 
     .. code-block:: python
 
-        >>> from mlsquare.imly import dope
+        >>> from mlsquare import dope
         >>> from sklearn.linear_model import LinearRegression
         >>> from sklearn.preprocessing import StandardScaler
         >>> from sklearn.model_selection import train_test_split
@@ -67,7 +67,7 @@ Setting up ``mlsquare`` is simple and easy
 Tutorial
 ========
 
-For a comprehensive tutorial please do checkout this `link <https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb>`__
+For a comprehensive tutorial please do checkout this `link <https://github.com/mlsquare/mlsquare/blob/master/examples/dope.ipynb>`__
 
 ==========
 Contribute
