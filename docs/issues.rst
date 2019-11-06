@@ -5,7 +5,7 @@ If you notice any issues during the usage the package :py:mod:`mlsquare`, please
 __ https://github.com/mlsquare/mlsquare/issues
 
 
-Creating a Issue
+Creating a new Issue
 ================
 
 1. To create a new issue, navigate to the `github`__ page of the project and create an issue from the `issues`__ column
@@ -13,8 +13,8 @@ Creating a Issue
 __ https://github.com/mlsquare/mlsquare
 __ https://github.com/mlsquare/mlsquare/issues/new
 
-2. Include a short title
+2. Include a short title.
 
-3. Include the error generate
+3. Include the error generated.
 
 4. Include the steps to reproduce it.

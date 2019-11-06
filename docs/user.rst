@@ -34,7 +34,7 @@ Load :py:meth:`dope` method into the enviroment
 
 .. code-block:: python
 
-    >>> from mlsquare.imly import dope
+    >>> from mlsquare import dope
 
 Transpiling an existing model using `dope`
 ==========================================
