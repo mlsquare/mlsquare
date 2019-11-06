@@ -20,6 +20,8 @@ __ http://python.org/
 
     __ http://mlsquare.org
 
+In the first version we have developed **Dope**. ``Dope`` is aimed to provide every Machine Learning Algorithm with an equivalent DNN Implementation.
+The ``dope`` feature available in the ``mlsquare`` framework is aimed at making interoperability between machine learning models easier.
 
 Getting Started!
 ================
@@ -69,7 +71,7 @@ Setting up :py:mod:`mlsquare` is simple and easy
 .. note::
     For a comprehensive tutorial please do checkout this `link`__
 
-    __ https://github.com/mlsquare/mlsquare/blob/master/examples/imly.ipynb
+    __ https://github.com/mlsquare/mlsquare/blob/master/examples/dope.ipynb
 
 Contents
 ========

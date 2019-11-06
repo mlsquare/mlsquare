@@ -237,6 +237,11 @@ class SklearnKerasRegressor():
         onnx_model = onnxmltools.convert_keras(self.final_model)
         onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
+    def explain(self, **kwargs):
+        # @param: SHAP or interpret
+        print('Coming soon...')
+        return self.final_model.summary()
+
 class SklearnPytorchClassifier():
     def __init__(self, proxy_model, primal_model, **kwargs):
         self.primal_model = primal_model

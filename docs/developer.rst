@@ -58,14 +58,14 @@ Implementation
 
 3. The following methods and attributes are expected to implemented while creating a new model,
     - ``create_model()`` - Your models architecture lies in this method. Calling this method would return a compiled dnn model(ex - keras or pytorch model).
-    - `set_params()` - The conventions followed by mlsquare in defining model parameters are mentioned below. This method should handle the "flattening" of parameters.
-    - `get_params()` - Calling this method should simply return the models existing parameters.
-    - `update_params()` - This method should enable updating the model parameters for an instantiated model.
-    - `adapter` - This attribute should contain the adapter choice you have made for your algorithm.
-    - `module_name` - The primal module name(should be a string)
-    - `name` - Name that you wish the model should be reffered by.
-    - `version` - If an implementation exists for your algorithm and you wish to improve it by a different implementation, make sure you add a meaningful version number.
-    - `model_params` - The parameters required to compile your model. Conventions to be followed are mentioned below.
+    - ``set_params()`` - The conventions followed by mlsquare in defining model parameters are mentioned below. This method should handle the "flattening" of parameters.
+    - ``get_params()`` - Calling this method should simply return the models existing parameters.
+    - ``update_params()`` - This method should enable updating the model parameters for an instantiated model.
+    - ``adapter`` - This attribute should contain the adapter choice you have made for your algorithm.
+    - ``module_name`` - The primal module name(should be a string)
+    - ``name`` - Name that you wish the model should be reffered by.
+    - ``version`` - If an implementation exists for your algorithm and you wish to improve it by a different implementation, make sure you add a meaningful version number.
+    - ``model_params`` - The parameters required to compile your model. Conventions to be followed are mentioned below.
 
 --------------------
 Notes on conventions
