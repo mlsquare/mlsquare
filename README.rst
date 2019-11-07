@@ -1,6 +1,6 @@
-========
+==============================================
 [ML]² :  Machine Learning for Machine Learning
-========
+==============================================
 
 .. image:: https://circleci.com/gh/mlsquare/mlsquare/tree/dev.svg?style=svg
     :target: https://circleci.com/gh/mlsquare/mlsquare/tree/dev
