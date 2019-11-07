@@ -14,7 +14,7 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/mlsquare/mlsquare/master
 
-ML Square is python library that utilises deep learning techniques to  
+ML Square is a python library that utilises deep learning techniques to  
 
 - Enable interoperability between existing standard machine learning frameworks.  
 - Provide explainability as a first-class function.  
