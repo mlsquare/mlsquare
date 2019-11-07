@@ -14,8 +14,11 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/mlsquare/mlsquare/master
 
-ML Square is python library that utilises deep learning techniques to enable interoperability 
-between existing standard machine learning frameworks.
+ML Square is python library that utilises deep learning techniques to  
+
+- Enable interoperability between existing standard machine learning frameworks.  
+- Provide explainability as a first-class function.  
+- Make ML self learnable.  
 
 ================
 Getting Started!
@@ -23,12 +26,12 @@ Getting Started!
 
 Setting up ``mlsquare`` is simple and easy
 
-    1. Create a Virtual Environment
+    1. Create a Virtual Environment(optional)
 
     .. code-block:: bash
 
-        virtualenv ~/.venv
-        source ~/.venv/bin/activate
+        virtualenv ~/venv
+        source ~/venv/bin/activate
 
     2. Install ``mlsquare`` package
 
