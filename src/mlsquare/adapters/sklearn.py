@@ -6,6 +6,61 @@ import pickle
 import onnxmltools
 import numpy as np
 
+import tensorflow as tf
+from keras.utils import to_categorical
+
+class SklearnKerasDecompose():
+    def __init__(self, proxy_model, primal_model, **kwargs):
+        self.primal_model = primal_model
+        self.params = None ## Temporary!
+        self.proxy_model = proxy_model
+        self.n_components= primal_model.n_components#moved here so user like in sklearncan can access n_components, even before .fit_transform. 
+        
+    def fit(self, X, y=None, **kwargs):
+        self.fit_transform(X)
+        return self
+    
+    def fit_transform(self, X, y=None,**kwargs):
+        kwargs.setdefault('full_matrices', False)
+        kwargs.setdefault('params', self.params)
+        kwargs.setdefault('space', False)
+        kwargs.setdefault('compute_uv', True)
+        kwargs.setdefault('name', None)
+        self.params = kwargs['params']
+        X = np.array(X)
+        y = np.array(y)
+        
+        #primal_model = self.primal_model
+        #self.proxy_model.n_components= primal_model.n_components        
+        #self.n_components= primal_model.n_components # Now its callable as model.num_components just like a sklearn svd object
+        
+        #?--should the `.num_components`, '.components_', '.singular_values_' be defined as attributes of proxy_model class or adapter class --?
+        
+        k = self.n_components
+        n_features = X.shape[1]
+        if k>= n_features:
+                raise ValueError("n_components must be < n_features;"
+                                 " got %d >= %d" % (k, n_features))
+            
+        sess= tf.Session()#for TF  1.13
+        s,u,v= sess.run(tf.linalg.svd(X, full_matrices=kwargs['full_matrices'], compute_uv=kwargs['compute_uv']))#for TF  1.13
+        #s: singular values
+        #u: normalised projection distances
+        #v: decomposition/projection orthogonal axes
+        
+        self.components_= v[:self.n_components,:]
+        #self.proxy_model.components_= v[:self.proxy_model.n_components,:]#analogous to TruncatedSVD().components_ Or primal_model.components_ Or Vh component from randomised SVD
+        
+        #Sigma = s[:self.proxy_model.num_components]
+        X_transformed = u[:,:self.n_components] * s[:self.n_components]
+        #X_transformed = u[:,:self.proxy_model.n_components] * s[:self.proxy_model.n_components]
+        
+        self.singular_values_ = s[:self.n_components]
+        #self.proxy_model.singular_values_ = s[:self.proxy_model.n_components]# Store the n_components singular values
+        
+        return X_transformed
+    
+    
 class SklearnKerasClassifier():
     """
 	Adapter to connect sklearn classifier algorithms with keras models.
