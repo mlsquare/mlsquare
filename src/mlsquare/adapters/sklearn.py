@@ -7,7 +7,6 @@ import onnxmltools
 import numpy as np
 
 import tensorflow as tf
-from keras.utils import to_categorical
 
 class SklearnKerasDecompose():
     def __init__(self, proxy_model, primal_model, **kwargs):

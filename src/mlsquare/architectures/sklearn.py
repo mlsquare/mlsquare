@@ -7,7 +7,7 @@ import numpy as np
 from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel
-from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnPytorchClassifier, SklearnKerasDecompose, SklearnKerasDecompose_1
+from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnPytorchClassifier, SklearnKerasDecompose
 from ..layers.keras import DecisionTree
 from ..utils.functions import _parse_params
 # from ..losses import lda_loss
