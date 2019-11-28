@@ -7,7 +7,7 @@ import numpy as np
 from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel
-from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnPytorchClassifier
+from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnPytorchClassifier, SklearnKerasDecompose, SklearnKerasDecompose_1
 from ..layers.keras import DecisionTree
 from ..utils.functions import _parse_params
 # from ..losses import lda_loss
@@ -85,6 +85,22 @@ class GeneralizedLinearModel(BaseModel):
     def adapter(self):
         return self._adapter
 
+            
+@registry.register
+class SVD(GeneralizedLinearModel):
+    def __init__(self):
+        self.adapter = SklearnKerasDecompose
+        self.module_name = 'sklearn' 
+        self.name = 'TruncatedSVD'
+        self.version = 'default'
+        model_params = {'full_matrices': False,
+                       'compute_uv': True,
+                      'name':None}
+
+        self.set_params(params=model_params, set_by='model_init')
+    def create_model(self, **kwargs):
+        pass
+    
 
 @registry.register
 class LogisticRegression(GeneralizedLinearModel):
@@ -372,3 +388,6 @@ class DecisionTreeClassifier(CART):
         }
 
         self.set_params(params=model_params, set_by='model_init')
+
+
+
