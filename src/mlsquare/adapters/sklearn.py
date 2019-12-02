@@ -6,8 +6,6 @@ from ..architectures import sklearn
 import pickle
 import onnxmltools
 import numpy as np
-
-import tensorflow as tf
   
     
 class SklearnKerasClassifier():
@@ -140,9 +138,6 @@ class SklearnKerasClassifier():
         print('Coming soon...')
         return self.final_model.summary()
 
-
-from mlsquare.architectures.sklearn import DimensionalityReductionModel
-
 class SklearnKerasRegressor():
     """
 	Adapter to connect sklearn regressor algorithms with keras models.
@@ -236,12 +231,12 @@ class SklearnKerasRegressor():
     
     def inverse_transform(self, X):
         if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'inverse_transform'")        
-        return self.proxy_model.inverse_transform(X)    
+            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'inverse_transform'")
+        return self.proxy_model.inverse_transform(X)
     
     def score(self, X, y, **kwargs):
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'score'")         
+            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'score'")
         
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
@@ -254,7 +249,6 @@ class SklearnKerasRegressor():
         '''
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'predict'")
-            
         pred = self.final_model.predict(X)
         return pred
 

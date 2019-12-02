@@ -15,86 +15,6 @@ import pandas
 from abc import abstractmethod
 # from ..losses import lda_loss
 
-class DimensionalityReductionModel:
-    """
-	A base class for all matrix decomposition models.
-
-    This class can be used as a base class for any dimensionality reduction models.
-    While implementing ensure all required methods are implemented or over written
-    Please refer to sklearn decomposition module for more details.
-
-    Methods
-    -------
-	fit(input_args)
-        fits the model to output singular decomposed values.
-        But outputs an object to further transform.
-
-	fir_transform(input_args)
-        fits the model to output input values with reduced dimensions.
-	
-
-    """
-    @abstractmethod
-    def fit(self, X, y= None):
-        """Needs Implementation in sub classes"""
-        
-    @abstractmethod
-    def fit_transform(self, X, y=None):
-        """Needs Implementation in sub classes"""
-
-@registry.register
-class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
-    def __init__(self):
-        self.adapter = SklearnKerasRegressor
-        self.module_name = 'sklearn' 
-        self.name = 'TruncatedSVD'
-        self.version = 'default'
-        model_params = {'full_matrices': False,
-                       'compute_uv': True,
-                      'name':None}
-        self.set_params(params=model_params, set_by='model_init')
-    
-    def fit(self, X, y=None, **kwargs):
-        self.fit_transform(X)
-        return self
-    
-    def fit_transform(self, X, y=None,**kwargs):
-        kwargs.setdefault('full_matrices', False)
-        kwargs.setdefault('compute_uv', True)
-        kwargs.setdefault('name', None)
-        
-        X = np.array(X, dtype= np.float32 if str(X.values.dtype)=='float32' else np.float64) if isinstance(X, pandas.core.frame.DataFrame) else np.array(X, dtype= np.float32 if str(X.dtype)=='float32' else np.float64)#changing to recommended dtype, accomodating dataframe & numpy array
-       
-        n_components= self.primal.n_components#using primal attributes passed from adapter
-        n_features = X.shape[1]
-
-        if n_components>= n_features:
-                raise ValueError("n_components must be < n_features;"
-                                 " got %d >= %d" % (n_components, n_features))
-                
-        sess= tf.Session()#for TF  1.13
-        s,u,v= sess.run(tf.linalg.svd(X, full_matrices=kwargs['full_matrices'], compute_uv=kwargs['compute_uv']))#for TF  1.13
-        #s: singular values
-        #u: normalised projection distances
-        #v: decomposition/projection orthogonal axes
-        
-        self.components_= v[:n_components,:]
-        X_transformed = u[:,:n_components] * s[:n_components]
-        
-        self.explained_variance_= np.var(X_transformed, axis=0)        
-        self.singular_values_ = s[:n_components]
-
-        return X_transformed
-    
-    def transform(self, X):
-        components= self.components_.T 
-        return X@components
-    
-    def inverse_transform(self, X):
-        return np.dot(X, self.components_)
-
-
-
 class GeneralizedLinearModel(BaseModel):
     """
 	A base class for all generalized linear models.
@@ -166,6 +86,86 @@ class GeneralizedLinearModel(BaseModel):
 
     def adapter(self):
         return self._adapter
+
+class DimensionalityReductionModel:
+    """
+	A base class for all matrix decomposition models.
+
+    This class can be used as a base class for any dimensionality reduction models.
+    While implementing ensure all required methods are implemented or over written
+    Please refer to sklearn decomposition module for more details.
+
+    Methods
+    -------
+	fit(input_args)
+        fits the model to output singular decomposed values.
+        But outputs an object to further transform.
+
+	fir_transform(input_args)
+        fits the model to output input values with reduced dimensions.
+	
+
+    """
+    @abstractmethod
+    def fit(self, X, y= None, **kwargs)):
+        """Needs Implementation in sub classes"""
+        
+    @abstractmethod
+    def fit_transform(self, X, y=None, **kwargs)):
+        """Needs Implementation in sub classes"""
+
+@registry.register
+class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
+    def __init__(self):
+        self.adapter = SklearnKerasRegressor
+        self.module_name = 'sklearn'
+        self.name = 'TruncatedSVD'
+        self.version = 'default'
+        model_params = {'full_matrices': False,
+                       'compute_uv': True,
+                      'name':None}
+        self.set_params(params=model_params, set_by='model_init')
+    
+    def fit(self, X, y=None, **kwargs):
+        self.fit_transform(X)
+        return self
+    
+    def fit_transform(self, X, y=None,**kwargs):
+        kwargs.setdefault('full_matrices', False)
+        kwargs.setdefault('compute_uv', True)
+        kwargs.setdefault('name', None)
+        
+        X = np.array(X, dtype= np.float32 if str(X.values.dtype)==
+        'float32' else np.float64) if isinstance(X,
+        pandas.core.frame.DataFrame) else np.array(X, dtype= np.float32 
+        if str(X.dtype)=='float32' else np.float64)#changing to recommended dtype, accomodating dataframe & numpy array
+       
+        n_components= self.primal.n_components#using primal attributes passed from adapter
+        n_features = X.shape[1]
+
+        if n_components>= n_features:
+                raise ValueError("n_components must be < n_features;"
+                                 " got %d >= %d" % (n_components, n_features))
+                
+        sess= tf.Session()#for TF  1.13
+        s,u,v= sess.run(tf.linalg.svd(X, full_matrices=kwargs['full_matrices'], compute_uv=kwargs['compute_uv']))#for TF  1.13
+        #s: singular values
+        #u: normalised projection distances
+        #v: decomposition/projection orthogonal axes
+        
+        self.components_= v[:n_components,:]
+        X_transformed = u[:,:n_components] * s[:n_components]
+        
+        self.explained_variance_= np.var(X_transformed, axis=0)
+        self.singular_values_ = s[:n_components]
+
+        return X_transformed
+    
+    def transform(self, X):
+        return np.dot(X, self.components_.T)
+    
+    def inverse_transform(self, X):
+        return np.dot(X, self.components_)
 
 @registry.register
 class LogisticRegression(GeneralizedLinearModel):
