@@ -111,7 +111,7 @@ class DimensionalityReductionModel:
         """Needs Implementation in sub classes"""
         
     @abstractmethod
-    def fit_transform(self, X, y=None, **kwargs)):
+    def fit_transform(self, X, y=None, **kwargs):
         """Needs Implementation in sub classes"""
 
 @registry.register
@@ -121,9 +121,7 @@ class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
         self.module_name = 'sklearn'
         self.name = 'TruncatedSVD'
         self.version = 'default'
-        model_params = {'full_matrices': False,
-                       'compute_uv': True,
-                      'name':None}
+        model_params = {'full_matrices': False, 'compute_uv': True, 'name':None}
         self.set_params(params=model_params, set_by='model_init')
     
     def fit(self, X, y=None, **kwargs):

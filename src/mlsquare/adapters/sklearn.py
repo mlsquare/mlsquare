@@ -240,7 +240,6 @@ class SklearnKerasRegressor():
         
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
-        
     def predict(self, X):
         '''
         Pending:
