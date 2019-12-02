@@ -107,7 +107,7 @@ class DimensionalityReductionModel:
 
     """
     @abstractmethod
-    def fit(self, X, y= None, **kwargs)):
+    def fit(self, X, y= None, **kwargs):
         """Needs Implementation in sub classes"""
         
     @abstractmethod
@@ -175,9 +175,9 @@ class LogisticRegression(GeneralizedLinearModel):
         self.name = 'LogisticRegression'
         self.version = 'default'
         model_params = {'layer_1': {'units': 1, ## Make key name private - '_layer'
-                                    'l1': 0,
-                                    'l2': 0,
-                                    'activation': 'sigmoid'},
+                        'l1': 0,
+                        'l2': 0,
+                        'activation': 'sigmoid'},
                         'optimizer': 'adam',
                         'loss': 'binary_crossentropy'
                         }
