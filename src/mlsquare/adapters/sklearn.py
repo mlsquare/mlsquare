@@ -199,11 +199,10 @@ class SklearnKerasRegressor():
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
-            
+        
         #if self.proxy_model.__class__.__name in ['SVD', 'PCA']:
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             return self.proxy_model.fit(X)
-        
         primal_model = self.primal_model
         primal_model.fit(X, y)
         y_pred = primal_model.predict(X)
@@ -225,7 +224,6 @@ class SklearnKerasRegressor():
     def fit_transform(self, X,y=None):
         if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'fit_transform'")
-        
         self.proxy_model.primal = self.primal_model
         return self.proxy_model.fit_transform(X)
     
@@ -237,7 +235,6 @@ class SklearnKerasRegressor():
     def score(self, X, y, **kwargs):
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'score'")
-        
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
     def predict(self, X):
@@ -255,7 +252,6 @@ class SklearnKerasRegressor():
         if filename == None:
             raise ValueError(
                 'Name Error: to save the model you need to specify the filename')
-
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'save'")
         pickle.dump(self.final_model, open(filename + '.pkl', 'wb'))
