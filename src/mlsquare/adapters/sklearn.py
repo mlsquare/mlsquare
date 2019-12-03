@@ -6,8 +6,8 @@ from ..architectures import sklearn
 import pickle
 import onnxmltools
 import numpy as np
-  
-    
+
+
 class SklearnKerasClassifier():
     """
 	Adapter to connect sklearn classifier algorithms with keras models.
@@ -199,7 +199,7 @@ class SklearnKerasRegressor():
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
-        
+
         #if self.proxy_model.__class__.__name in ['SVD', 'PCA']:
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             return self.proxy_model.fit(X)
@@ -220,23 +220,24 @@ class SklearnKerasRegressor():
         if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'transform'")
         return self.proxy_model.transform(X)
-    
+
     def fit_transform(self, X,y=None):
         if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'fit_transform'")
         self.proxy_model.primal = self.primal_model
         return self.proxy_model.fit_transform(X)
-    
+
     def inverse_transform(self, X):
         if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'inverse_transform'")
         return self.proxy_model.inverse_transform(X)
-    
+
     def score(self, X, y, **kwargs):
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
             raise AttributeError("'SklearnKerasRegressor' object has no attribute 'score'")
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
+
     def predict(self, X):
         '''
         Pending:

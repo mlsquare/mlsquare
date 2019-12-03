@@ -158,7 +158,7 @@ class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
         self.singular_values_ = s[:n_components]
 
         return X_transformed
-    
+
     def transform(self, X):
         return np.dot(X, self.components_.T)
 
