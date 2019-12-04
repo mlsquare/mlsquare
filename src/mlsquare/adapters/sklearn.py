@@ -47,7 +47,6 @@ class SklearnTfTransformer():
         self.primal_model = primal_model
         self.proxy_model = proxy_model
         self.proxy_model.primal = self.primal_model
-        #self.proxy_model(primal_model)#to access proxy_model.n_components
         self.params = None
 
     def fit(self, X, y=None, **kwargs):
@@ -60,30 +59,21 @@ class SklearnTfTransformer():
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
 
-        #if self.proxy_model.__class__.__name in ['SVD', 'PCA']:
-        if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            self.fit_transform(X)
+        self.fit_transform(X)
 
-            self.params = self.proxy_model.get_params()
-            #to avoid calling model.fit(X).proxy_model for sigma & Vh
-            self.components_= self.params['components_']
-            self.singular_values_= self.params['singular_values_']
-            return self
+        self.params = self.proxy_model.get_params()
+        #to avoid calling model.fit(X).proxy_model for sigma & Vh
+        self.components_= self.params['components_']
+        self.singular_values_= self.params['singular_values_']
+        return self
 
     def transform(self, X):
-        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnTfTransformer' object has no attribute 'transform'")
         return self.proxy_model.transform(X)
 
     def fit_transform(self, X,y=None):
-        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnTfTransformer' object has no attribute 'fit_transform'")
-        self.proxy_model.primal = self.primal_model
         return self.proxy_model.fit_transform(X)
 
     def inverse_transform(self, X):
-        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnTfTransformer' object has no attribute 'inverse_transform'")
         return self.proxy_model.inverse_transform(X)
 
 

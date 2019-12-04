@@ -6,7 +6,7 @@ from keras.regularizers import l1_l2
 import numpy as np
 from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
-from ..base import registry, BaseModel
+from ..base import registry, BaseModel, BaseTransformer
 from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnTfTransformer, SklearnPytorchClassifier
 from ..layers.keras import DecisionTree
 from ..utils.functions import _parse_params
@@ -87,47 +87,47 @@ class GeneralizedLinearModel(BaseModel):
     def adapter(self):
         return self._adapter
 
-class DimensionalityReductionModel:
+class MatrixDecomposition:
     """
 	A base class for all matrix decomposition models.
 
-    This class can be used as a base class for any dimensionality reduction models.
+    This class can be used as a base class for matrix decomposition models.
     While implementing ensure all required methods are implemented or over written
-    Please refer to sklearn decomposition module for more details.
 
     Methods
     -------
-	fit(input_args)
-        fits the model to output singular decomposed values.
-        But outputs an object to further transform.
+	set_params(params)
+        Method to set model parameters. This method handles the
+        flattening of params as well.
 
-	fir_transform(input_args)
-        fits the model to output input values with reduced dimensions.
+	get_params()
+        Method to read params.
+
+	update_params(params)
+        Method to update params.
     """
-    #@abstractmethod
-    #def fit(self, X, y= None, **kwargs):
-    #    """Needs Implementation in sub classes"""
+    def set_params(self, **kwargs):
+        kwargs.setdefault('params', None)
+        self._model_params = _parse_params(kwargs['params'], return_as='flat')
 
-    @abstractmethod
-    def fit_transform(self, X, y=None, **kwargs):
-        """Needs Implementation in sub classes"""
+    def get_params(self):
+        return self._model_params
+
+    def update_params(self, params):
+        self._model_params.update(params)
 
 @registry.register
-class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
+class SVD(BaseTransformer, MatrixDecomposition):
     def __init__(self):
         self.adapter = SklearnTfTransformer
         self.module_name = 'sklearn'
         self.name = 'TruncatedSVD'
         self.version = 'default'
         model_params = {'full_matrices': False, 'compute_uv': True, 'name':None}
-        self.set_params(params=model_params, set_by='model_init')
-
-    def fit(self, X, y=None, **kwargs):
-        self.fit_transform(X)
-        return self
+        self.set_params(params=model_params)
 
     def fit_transform(self, X, y=None,**kwargs):
-        model_params= _parse_params(self._model_params, return_as='nested')
+        model_params= _parse_params(self._model_params, return_as='flat')
 
         #changing to recommended dtype, accomodating dataframe & numpy array
         X = np.array(X, dtype= np.float32 if str(X.values.dtype)==
@@ -143,7 +143,7 @@ class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
                                  " got %d >= %d" % (n_components, n_features))
 
         sess= tf.Session()#for TF  1.13
-        s,u,v= sess.run(tf.linalg.svd(X, full_matrices=kwargs['full_matrices'], compute_uv=kwargs['compute_uv']))#for TF  1.13
+        s,u,v= sess.run(tf.linalg.svd(X, full_matrices=model_params['full_matrices'], compute_uv=model_params['compute_uv']))#for TF  1.13
         #s: singular values
         #u: normalised projection distances
         #v: decomposition/projection orthogonal axes
@@ -161,10 +161,12 @@ class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
         return X_transformed
 
     def transform(self, X):
-        return np.dot(X, self.components_.T)
+        sess= tf.Session()
+        return sess.run(tf.tensordot(X, self.components_.T, axes=1))
 
     def inverse_transform(self, X):
-        return np.dot(X, self.components_)
+        sess= tf.Session()
+        return sess.run(tf.tensordot(X, self.components_, axes=1))
 
 @registry.register
 class LogisticRegression(GeneralizedLinearModel):
