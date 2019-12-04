@@ -7,7 +7,7 @@ import numpy as np
 from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel
-from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnPytorchClassifier
+from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnTfTransformer, SklearnPytorchClassifier
 from ..layers.keras import DecisionTree
 from ..utils.functions import _parse_params
 import tensorflow as tf
@@ -103,12 +103,10 @@ class DimensionalityReductionModel:
 
 	fir_transform(input_args)
         fits the model to output input values with reduced dimensions.
-	
-
     """
-    @abstractmethod
-    def fit(self, X, y= None, **kwargs):
-        """Needs Implementation in sub classes"""
+    #@abstractmethod
+    #def fit(self, X, y= None, **kwargs):
+    #    """Needs Implementation in sub classes"""
 
     @abstractmethod
     def fit_transform(self, X, y=None, **kwargs):
@@ -117,7 +115,7 @@ class DimensionalityReductionModel:
 @registry.register
 class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
     def __init__(self):
-        self.adapter = SklearnKerasRegressor
+        self.adapter = SklearnTfTransformer
         self.module_name = 'sklearn'
         self.name = 'TruncatedSVD'
         self.version = 'default'
@@ -129,14 +127,13 @@ class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
         return self
 
     def fit_transform(self, X, y=None,**kwargs):
-        kwargs.setdefault('full_matrices', False)
-        kwargs.setdefault('compute_uv', True)
-        kwargs.setdefault('name', None)
+        model_params= _parse_params(self._model_params, return_as='nested')
 
+        #changing to recommended dtype, accomodating dataframe & numpy array
         X = np.array(X, dtype= np.float32 if str(X.values.dtype)==
         'float32' else np.float64) if isinstance(X,
         pandas.core.frame.DataFrame) else np.array(X, dtype= np.float32
-        if str(X.dtype)=='float32' else np.float64)#changing to recommended dtype, accomodating dataframe & numpy array
+        if str(X.dtype)=='float32' else np.float64)
 
         n_components= self.primal.n_components#using primal attributes passed from adapter
         n_features = X.shape[1]
@@ -156,6 +153,10 @@ class SVD(DimensionalityReductionModel, GeneralizedLinearModel):
 
         self.explained_variance_= np.var(X_transformed, axis=0)
         self.singular_values_ = s[:n_components]
+
+        #passing sigma & vh to adapter for subsequent access from adapter object itself.
+        model_params={'singular_values_':self.singular_values_,'components_':self.components_}
+        self.update_params(model_params)
 
         return X_transformed
 

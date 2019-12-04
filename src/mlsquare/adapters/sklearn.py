@@ -7,6 +7,85 @@ import pickle
 import onnxmltools
 import numpy as np
 
+class SklearnTfTransformer():
+    """
+	Adapter to connect sklearn decomposition methods to respective TF implementations.
+
+    This class can be used as an adapter for primal decomposition methods that can
+    utilise TF backend for proxy model.
+
+    Parameters
+    ----------
+    proxy_model : proxy model instance
+        The proxy model passed from dope.
+
+    primal_model : primal model instance
+        The primal model passed from dope.
+
+    params : dict, optional
+        Additional model params passed by the user.
+
+
+    Methods
+    -------
+	fit(X, y)
+        Method to train a transpiled model
+
+	transform(X)
+        Method to transform the input matrix to truncated dimensions;
+        Only once the decomposed values are computed.
+
+	fit_transform(X)
+        Method to right away transform the input matrix to truncated dimensions.
+
+	inverse_transform(X)
+        This method returns Original values from the resulting decomposed matrices.
+
+    """
+
+    def __init__(self, proxy_model, primal_model, **kwargs):
+        self.primal_model = primal_model
+        self.proxy_model = proxy_model
+        self.proxy_model.primal = self.primal_model
+        #self.proxy_model(primal_model)#to access proxy_model.n_components
+        self.params = None
+
+    def fit(self, X, y=None, **kwargs):
+        self.proxy_model.X = X
+        self.proxy_model.y = y
+
+        if self.params != None: ## Validate implementation with different types of tune input
+            if not isinstance(self.params, dict):
+                raise TypeError("Params should be of type 'dict'")
+            self.params = _parse_params(self.params, return_as='flat')
+            self.proxy_model.update_params(self.params)
+
+        #if self.proxy_model.__class__.__name in ['SVD', 'PCA']:
+        if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
+            self.fit_transform(X)
+
+            self.params = self.proxy_model.get_params()
+            #to avoid calling model.fit(X).proxy_model for sigma & Vh
+            self.components_= self.params['components_']
+            self.singular_values_= self.params['singular_values_']
+            return self
+
+    def transform(self, X):
+        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
+            raise AttributeError("'SklearnTfTransformer' object has no attribute 'transform'")
+        return self.proxy_model.transform(X)
+
+    def fit_transform(self, X,y=None):
+        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
+            raise AttributeError("'SklearnTfTransformer' object has no attribute 'fit_transform'")
+        self.proxy_model.primal = self.primal_model
+        return self.proxy_model.fit_transform(X)
+
+    def inverse_transform(self, X):
+        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
+            raise AttributeError("'SklearnTfTransformer' object has no attribute 'inverse_transform'")
+        return self.proxy_model.inverse_transform(X)
+
 
 class SklearnKerasClassifier():
     """
@@ -199,10 +278,6 @@ class SklearnKerasRegressor():
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
-
-        #if self.proxy_model.__class__.__name in ['SVD', 'PCA']:
-        if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            return self.proxy_model.fit(X)
         primal_model = self.primal_model
         primal_model.fit(X, y)
         y_pred = primal_model.predict(X)
@@ -215,22 +290,6 @@ class SklearnKerasRegressor():
                                           epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
                                           verbose=kwargs['verbose'])
         return self.final_model  # Not necessary.
-
-    def transform(self, X):
-        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'transform'")
-        return self.proxy_model.transform(X)
-
-    def fit_transform(self, X,y=None):
-        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'fit_transform'")
-        self.proxy_model.primal = self.primal_model
-        return self.proxy_model.fit_transform(X)
-
-    def inverse_transform(self, X):
-        if not isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'inverse_transform'")
-        return self.proxy_model.inverse_transform(X)
 
     def score(self, X, y, **kwargs):
         if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
