@@ -5,9 +5,6 @@
 .. image:: https://circleci.com/gh/mlsquare/mlsquare/tree/dev.svg?style=svg
     :target: https://circleci.com/gh/mlsquare/mlsquare/tree/dev
 
-.. image:: https://api.codacy.com/project/badge/Grade/5b23c72bf17246e6b3df610a798f8935
-    :target: https://www.codacy.com/app/shakkeel1330/mlsquare?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mlsquare/mlsquare&amp;utm_campaign=Badge_Grade
-
 .. image:: https://api.codacy.com/project/badge/Coverage/5b23c72bf17246e6b3df610a798f8935
     :target: https://www.codacy.com/app/shakkeel1330/mlsquare?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mlsquare/mlsquare&amp;utm_campaign=Badge_Coverage
 
