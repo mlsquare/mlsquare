@@ -103,4 +103,21 @@ class BaseModel(ABC):
 	def transform_data(self, X, y, y_pred):
 		return X, y, y_pred
 
+class BaseTransformer(ABC):
+    """
+	A base class for matrix decomposition models.
+
+    This class can be used as a base class for any dimensionality reduction models.
+    While implementing ensure all required methods are implemented or over written
+    Please refer to sklearn decomposition module for more details.
+
+    Methods
+    -------
+	fir_transform(input_args)
+        fits the model to output input values with reduced dimensions.
+    """
+    @abstractmethod
+    def fit_transform(self, X, y=None, **kwargs):
+        raise NotImplementedError('Needs to be implemented!')
+
 registry = Registry()
