@@ -87,7 +87,7 @@ class GeneralizedLinearModel(BaseModel):
     def adapter(self):
         return self._adapter
 
-class MatrixDecomposition:
+class MatrixDecomposition(BaseTransformer):
     """
 	A base class for all matrix decomposition models.
 
@@ -106,6 +106,12 @@ class MatrixDecomposition:
 	update_params(params)
         Method to update params.
     """
+    def fit(X, y, **kwargs):
+        pass
+
+    def fit_transform(X, y, **kwargs):
+        pass
+
     def set_params(self, **kwargs):
         kwargs.setdefault('params', None)
         self._model_params = _parse_params(kwargs['params'], return_as='flat')
@@ -117,7 +123,7 @@ class MatrixDecomposition:
         self._model_params.update(params)
 
 @registry.register
-class SVD(BaseTransformer, MatrixDecomposition):
+class SVD(MatrixDecomposition):
     def __init__(self):
         self.adapter = SklearnTfTransformer
         self.module_name = 'sklearn'
@@ -125,6 +131,10 @@ class SVD(BaseTransformer, MatrixDecomposition):
         self.version = 'default'
         model_params = {'full_matrices': False, 'compute_uv': True, 'name':None}
         self.set_params(params=model_params)
+
+    def fit(self, X, y=None,**kwargs):
+        self.fit_transform(X)
+        return self
 
     def fit_transform(self, X, y=None,**kwargs):
         model_params= _parse_params(self._model_params, return_as='flat')

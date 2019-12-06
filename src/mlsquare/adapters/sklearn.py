@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from ..optmizers import get_best_model
 from ..utils.functions import _parse_params
-from ..architectures import sklearn
 import pickle
 import onnxmltools
 import numpy as np
@@ -59,7 +58,7 @@ class SklearnTfTransformer():
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
 
-        self.fit_transform(X)
+        self.proxy_model.fit(X)
 
         self.params = self.proxy_model.get_params()
         #to avoid calling model.fit(X).proxy_model for sigma & Vh
@@ -282,8 +281,6 @@ class SklearnKerasRegressor():
         return self.final_model  # Not necessary.
 
     def score(self, X, y, **kwargs):
-        if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'score'")
         score = self.final_model.evaluate(X, y, **kwargs)
         return score
 
@@ -293,8 +290,6 @@ class SklearnKerasRegressor():
         1) Write a 'filter_sk_params' function(check keras_regressor wrapper) if necessary.
         2) Data checks and data conversions
         '''
-        if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'predict'")
         pred = self.final_model.predict(X)
         return pred
 
@@ -302,8 +297,6 @@ class SklearnKerasRegressor():
         if filename == None:
             raise ValueError(
                 'Name Error: to save the model you need to specify the filename')
-        if isinstance(self.proxy_model, (sklearn.DimensionalityReductionModel)):
-            raise AttributeError("'SklearnKerasRegressor' object has no attribute 'save'")
         pickle.dump(self.final_model, open(filename + '.pkl', 'wb'))
 
         self.final_model.save(filename + '.h5')
