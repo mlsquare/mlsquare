@@ -158,6 +158,7 @@ class SVD(MatrixDecomposition):
         #u: normalised projection distances
         #v: decomposition/projection orthogonal axes
 
+        v = v.T#check v is consistent with numpy's v, as tf returns adjoint v
         self.components_= v[:n_components,:]
         X_transformed = u[:,:n_components] * s[:n_components]
 
@@ -172,11 +173,13 @@ class SVD(MatrixDecomposition):
 
     def transform(self, X):
         sess= tf.Session()
-        return sess.run(tf.tensordot(X, self.components_.T, axes=1))
+        res = sess.run(tf.tensordot(X, self.components_.T, axes=1))
+        return res
 
     def inverse_transform(self, X):
         sess= tf.Session()
-        return sess.run(tf.tensordot(X, self.components_, axes=1))
+        res = sess.run(tf.tensordot(X, self.components_, axes=1))
+        return res 
 
 @registry.register
 class LogisticRegression(GeneralizedLinearModel):
