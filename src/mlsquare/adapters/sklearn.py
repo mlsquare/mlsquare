@@ -58,19 +58,24 @@ class SklearnTfTransformer():
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
 
-        self.proxy_model.fit(X)
-
-        self.params = self.proxy_model.get_params()
+        self.fit_transform(X)
+        #self.proxy_model.fit(X)
+        #self.params = self.proxy_model.get_params()
         #to avoid calling model.fit(X).proxy_model for sigma & Vh
-        self.components_= self.params['components_']
-        self.singular_values_= self.params['singular_values_']
+        #self.components_= self.params['components_']
+        #self.singular_values_= self.params['singular_values_']
         return self
 
     def transform(self, X):
         return self.proxy_model.transform(X)
 
     def fit_transform(self, X,y=None):
-        return self.proxy_model.fit_transform(X)
+        x_transformed = self.proxy_model.fit_transform(X)
+        self.params = self.proxy_model.get_params()
+        #to avoid calling model.fit(X).proxy_model for sigma & Vh
+        self.components_= self.params['components_']
+        self.singular_values_= self.params['singular_values_']
+        return x_transformed
 
     def inverse_transform(self, X):
         return self.proxy_model.inverse_transform(X)
