@@ -12,9 +12,14 @@ from keras.utils import to_categorical
 from mlsquare.base import registry
 from mlsquare.adapters import SklearnKerasClassifier
 from mlsquare.architectures.sklearn import GeneralizedLinearModel, KernelGeneralizedLinearModel, CART
-from datasets import _load_diabetes, _load_iris
+from datasets import _load_diabetes, _load_iris, _load_boston
+from sklearn.decomposition import TruncatedSVD
+import tensorflow as tf
 
-
+def _load_decomposition_data():
+    X, Y = _load_boston()
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.60, random_state=0)
+    return x_train
 
 def _load_regression_data():
     X, Y = _load_diabetes()
@@ -86,6 +91,38 @@ def _prepare_mock_model(parent_class, adapter, module_name, model_name, version,
         mock_model.primal = DecisionTreeClassifier().fit(x_train, y_train)
     mock_proxy_model = mock_model.create_model()
     return mock_proxy_model
+
+def _run_decomposition_test(primal_model_class, num_components):
+    X = _load_decomposition_data()
+    primal_model = primal_model_class(n_components= num_components)
+    proxy_model = _mock_dope(primal_model)
+    sess= tf.Session()
+
+    tf_trans_x = proxy_model.fit_transform(X)
+    tf_sigma = proxy_model.singular_values_ 
+    tf_U = tf_trans_x/tf_sigma
+    tf_V= proxy_model.components_
+    tf_approx_recon =  sess.run(tf.matmul(tf_U, tf.matmul(tf.linalg.diag(tf_sigma), tf_V)))#, adjoint_b=True) v.T in arch-line#161
+    #tf_approx_recon= np.dot(tf_U, np.dot(np.diag(tf_sigma), tf_V))#Since tf_U/tf_V are not tensors anymore
+
+    skl_trans_x = primal_model.fit_transform(X)
+    skl_sigma = primal_model.singular_values_    
+    skl_U = skl_trans_x/skl_sigma
+    skl_V= primal_model.components_
+    skl_approx_recon = np.dot(skl_U, np.dot(np.diag(skl_sigma), skl_V))
+
+    result = np.allclose(tf_approx_recon, skl_approx_recon)
+    _, p_value = stats.ttest_rel(tf_sigma, skl_sigma)
+
+    return result, p_value
+
+def test_svd_reconstruction():
+    result, _ = _run_decomposition_test(TruncatedSVD, 10)
+    assert result is True
+
+def test_svd_sigma_vals():
+    _, p_value = _run_decomposition_test(TruncatedSVD, 10)
+    assert p_value < 1e-01
 
 @pytest.mark.xfail()
 def test_linear_regression_ttest():
