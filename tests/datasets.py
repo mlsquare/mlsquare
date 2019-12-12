@@ -8,7 +8,16 @@ This file loads and returds datasets from datasets folder
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
 
+def _load_boston():
+    data = pd.read_csv("boston.csv")
+    X = data.iloc[:, :-1]
+    Y = data.iloc[:, -1]
+
+    lbe= LabelEncoder()
+    X = X.apply(lambda x: lbe.fit_transform(x))
+    return X, Y
 
 def _load_diabetes():
     data = pd.read_csv('./datasets/diabetes.csv', delimiter=",",
