@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 
 def _load_boston():
-    data = pd.read_csv("boston.csv")
+    data = pd.read_csv('./datasets/boston.csv')
     X = data.iloc[:, :-1]
     Y = data.iloc[:, -1]
 
