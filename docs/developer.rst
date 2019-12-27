@@ -2,6 +2,19 @@
 Developer Guide
 ===============
 
+Getting Started
+===============
+
+--------------
+Git and Github
+--------------
+Our development process heavily relies on Git and Github. If you're unfamiliar with Git or Github workflow, a good place to start would be with this `guide <https://guides.github.com/activities/hello-world/>`__.
+
+-----
+Slack
+-----
+To get directly in touch with the team and ML Square community, you're encouraged to join our Slack channel - https://mlsquare.slack.com/
+
 Setup
 =====
 
@@ -10,8 +23,14 @@ Forking a repository
 --------------------
 
 To ensure a risk-free environment to work with, you will have to fork the mlsquare repository. Once you have
-forked the repository, you can call `git fetch upstream` and `git pull 'branch-name'` before you make any local.
+forked the repository, you can call ``git fetch upstream`` and ``git pull 'branch-name'`` before you make any local.
 This will ensure that your local repository is up-to-date with the remote repository.
+
+------------------------------
+Syncing your forked repository
+------------------------------
+
+Please refer to this `guide <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork>`__ if you face difficulties in syncing your fork with the ``mlsquare`` repository.
 
 --------------------------------------------
 Installing mlsquare after cloning repository
@@ -43,7 +62,7 @@ to contribute to the existing collection of algorithms available in mlsquare.
 Where to add?
 -------------
 
-Navigate to `mlsquare.architectures` folder. Choose your primal module(say `sklearn.py <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/architectures/sklearn.py>`).
+Navigate to `mlsquare.architectures` folder. Choose your primal module(say `sklearn.py <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/architectures/sklearn.py>`__).
 The `architectures` folder consists of all existing algorithm mappings. Each .py file in this folder represents a primal module.
 
 
