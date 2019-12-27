@@ -44,13 +44,6 @@ version. This will help you in testing changes you make to the repository.
    cd path-to-local-repo/mlsquare
    python setup.py develop
 
-You can run the test cases using the following commands
-
-.. code-block:: bash
-
-   cd path-to-local-repo/mlsquare
-   python setup.py test
-
 
 Adding an algorithm
 ===================
@@ -70,20 +63,20 @@ The `architectures` folder consists of all existing algorithm mappings. Each .py
 Implementation
 --------------
 
-1. Each algorithm is expected to be declared as a class. An algorithm should be registered in the ``registry`` (check FAQs for details) using the @registry.register decorator.
+1. Each algorithm is expected to be declared as a class. An algorithm should be registered in the ``registry`` using the ``@registry.register`` decorator.
 
 2. Use the base class available in `base.py <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/base.py#L43>`__ as the parent class for your algorithm. Feel free to use an already existing base class(ex - `glm <https://github.com/mlsquare/mlsquare/blob/master/src/mlsquare/architectures/sklearn.py#L16>`__)
    if it matches your algorithm's needs.
 
 3. The following methods and attributes are expected to implemented while creating a new model,
-    - ``create_model()`` - Your models architecture lies in this method. Calling this method would return a compiled dnn model(ex - keras or pytorch model).
+    - ``create_model()`` - Your model's architecture lies in this method. Calling this method would return a compiled dnn model(ex - keras or pytorch model).
     - ``set_params()`` - The conventions followed by mlsquare in defining model parameters are mentioned below. This method should handle the "flattening" of parameters.
     - ``get_params()`` - Calling this method should simply return the models existing parameters.
     - ``update_params()`` - This method should enable updating the model parameters for an instantiated model.
     - ``adapter`` - This attribute should contain the adapter choice you have made for your algorithm.
     - ``module_name`` - The primal module name(should be a string)
     - ``name`` - Name that you wish the model should be reffered by.
-    - ``version`` - If an implementation exists for your algorithm and you wish to improve it by a different implementation, make sure you add a meaningful version number.
+    - ``version`` - If an implementation already exists for your algorithm and you wish to improve it by a different implementation, make sure you add a meaningful version number.
     - ``model_params`` - The parameters required to compile your model. Conventions to be followed are mentioned below.
 
 --------------------
@@ -93,10 +86,9 @@ Notes on conventions
 1. Currently mlsquare supports keras as the backend for proxy models. The convention we follow is similar to that of
    keras with some minor changes.
 
-2. The parameters should be defined as a dictionary of dictionaries. The first level of dicts should represent the
-   the each layer. Each layer should be followed by the index of the layer.
+2. The parameters should be defined as a dictionary of dictionaries. The first level of dict should represent each layer. Each layer should be followed by the index of the layer.
 
-3. Sample parameter - The below sample shows the parameters for a keras model with 2 layer(both hidden and visible),
+3. Sample parameter - This sample dict shows the parameters for a keras model with 2 layer(both hidden and visible),
     .. code-block:: python
 
      model_params = {'layer_1': {'units': 1, 'activation': 'sigmoid'},
@@ -162,7 +154,35 @@ Sample implementation
         1. Please make sure that you "register" your model in the registery by using the @register.registry decorator.
         2. Define all mandatory attributes mention earlier in your model's `__init__()` method.
         3. Set your params once you have finalized using the `set_params()` method.
+        
+------------------
+Writing test cases
+------------------
 
+Please make sure that test cases are written with atleast 90% coverage for each new algorithm added. ``mlsquare`` utilizes ``pytest`` to execute test cases. Test cases should be added to the `tests <https://github.com/mlsquare/mlsquare/tree/master/tests>`__ folder to corresponding module's file. For example, test cases for a newly added algorithm would be defined in the `test_architectures.py<https://github.com/mlsquare/mlsquare/blob/master/tests/test_architectures.py>`__ file. Please feel free to reachout for help via our Slack channel if you face any difficulties in writing or understanding test cases.
+
+Once you have completed your test cases, you can run them using the following commands
+
+.. code-block:: bash
+
+   cd path-to-local-repo/mlsquare
+   python setup.py test
+
+-----------------------
+Creating a Pull Request
+-----------------------
+
+When the required additions are made and sufficient test cases are added, please raise a Pull Request. Always make sure that raise your Pull Requests to the ``dev`` branch. Please add ``[WIP]`` to the title on PRs that are not complete and is still work in progress.
+
+----------------------------
+Check CI and wait for review
+----------------------------
+
+All commits undergo an automated check by CircleCI. This ensures build checks and executes test cases.
+
+Reviews would be done only on commits that pass the CircleCI checks.
+
+Do not worry if the checks fail. Failing the CI checks will not close the PR by default. You can always cross-check what went wrong in CircleCI feedback and fix the errors and update the PR.
 
 ----
 FAQs
