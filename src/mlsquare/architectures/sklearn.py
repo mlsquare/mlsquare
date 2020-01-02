@@ -15,6 +15,171 @@ import pandas
 from abc import abstractmethod
 # from ..losses import lda_loss
 
+import keras
+from keras import backend as K
+from keras.layers import Lambda
+from keras import regularizers
+from keras import initializers
+from keras.layers import Activation
+from keras import metrics
+
+class GenIrtModel(BaseModel):
+    def create_model(self, **kwargs):
+        model_params = _parse_params(self._model_params, return_as='nested')
+        model_params.update({'input_dims_users':self.x_train_user.shape[1],'input_dims_items':self.x_train_questions.shape[1]})
+        
+        user_input_layer = Input(shape=(model_params['input_dims_users'],), name= 'user_id')#top half of input
+        quest_input_layer = Input(shape=(model_params['input_dims_items'],), name='questions/items')#bottom half of input
+        
+        if not self.l_traits==None:
+            pass#provision to add latent traits to first layer
+            #latent_trait = Dense(1, use_bias=False,
+            #    kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),
+            #    kernel_regularizer=regularizers.l2(0.01), name='latent_trait')(user_input_layer)
+        else:
+            latent_trait = Dense(model_params['units'], use_bias=False,
+                kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),
+                kernel_regularizer=l1_l2(l1=model_params['l1'], l2= model_params['l2']), name='latent_trait')(user_input_layer)
+
+        #2. kernel init set to RandomNorm(0,1)
+        #b_j
+        difficulty_level = Dense(model_params['units'], use_bias=False,
+            kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),
+            name='difficulty_level')(quest_input_layer)#b_j
+
+        #3. kernel init set to RandomNorm(1,1)
+        # Descrimination- also lamda_j
+        discrimination_param = Dense(model_params['units'], use_bias=False,
+            kernel_initializer= initializers.RandomNormal(mean=0, stddev=model_params['disc_stddev'], seed=None),
+            trainable=model_params['train_disc'],
+            activation= 'exponential',#kernel_constraint= constraints.NonNeg(),
+            name='disc_param')(quest_input_layer)
+
+        #lamda_j*t_i
+        disc_latent_interaction = keras.layers.Multiply(name='lambda_latent_inter.')([discrimination_param, latent_trait])
+
+        #alpha_j(= lambda_j*b_j)
+        disc_diff_interaction = keras.layers.Multiply(name='alpha_param.')([discrimination_param, difficulty_level])
+
+        #alpha_j + lamda_j*t_i]
+        alpha_lambda_add = keras.layers.Subtract(name='alpha_lambda_add')([disc_latent_interaction, disc_diff_interaction])# -alpha+lambda*latent_traits
+
+        #Sigmoid[alpha_j + lamda_j*t_i]
+        sigmoid_layer= Activation('sigmoid', name='Sigmoid_func')(alpha_lambda_add)
+
+        #c_j
+        guess_param = Dense(model_params['units'], use_bias=False,
+            kernel_initializer= initializers.RandomUniform(minval=model_params['guess_minval'], maxval=model_params['guess_maxval'], seed=None),  trainable=model_params['train_guess'],
+            activation=model_params['guess_act'], name='guessing_param')(quest_input_layer)
+
+        #5. Sigmoid positioning corrected as per 3PL expression
+
+
+        #(1-c_j)
+        guess_param_interaction= Lambda(lambda x: K.constant(value=np.array([1])) - x, name='guess_param_inter.')(guess_param)
+
+        #(1-c_j)*sigmoid[]
+        guess_param_interaction= keras.layers.Multiply(name='disc/guess_param_inter.')([sigmoid_layer,
+                                                guess_param_interaction])
+        #c_j+ (1-c_j)*sigmoid[]
+        guess_param_interaction= keras.layers.Add(name='guess_param_inter/add')([guess_param, guess_param_interaction])
+
+
+        #6. changed activation to just linear
+        prediction_output = Dense(model_params['units'], trainable=False, use_bias=False,kernel_initializer=keras.initializers.Ones(), name='prediction_layer')(guess_param_interaction)
+
+
+        model_ = Model(inputs=[user_input_layer, quest_input_layer], outputs= prediction_output)
+        model_.compile(loss= 'binary_crossentropy', optimizer='sgd', metrics= ['mae', 'accuracy'])
+        return model_
+
+    def set_params(self, **kwargs):
+        kwargs.setdefault('params', None)
+        kwargs.setdefault('set_by', None)
+        if kwargs['set_by'] == 'model_init':
+            ## Detect nested or flat at parse_params level
+            self._model_params = _parse_params(kwargs['params'], return_as='flat')
+        elif kwargs['set_by'] == 'opitmizer':
+            self._model_params = kwargs['params']
+        else:
+            self._model_params = kwargs['params']
+
+    def get_params(self):
+        return self._model_params
+
+    def update_params(self, params):
+        self._model_params.update(params)
+
+    def adapter(self):
+        return self._adapter
+
+    
+@registry.register
+class KerasIrt1PLModel(GenIrtModel):
+    def __init__(self):
+        self.adapter = IrtKerasRegressor
+        self.module_name= 'embibe'
+        self.name= 'irt'
+        self.version= '1PL'
+        model_params = {'l1':0, 'l2':0,
+                        'disc_stddev':0,
+                        'guess_minval':0,'guess_maxval':0,
+                        'train_guess':False,
+                        'train_disc':False,
+                        'guess_act':'linear',
+                        'units': 1,
+                        'activation': 'sigmoid',
+                        'optimizer': 'sgd',
+                        'loss': 'binary_crossentropy'
+                        }
+
+        self.set_params(params=model_params, set_by='model_init')
+
+@registry.register
+class KerasIrt2PLModel(GenIrtModel):
+    def __init__(self):
+        self.adapter = IrtKerasRegressor
+        self.module_name= 'embibe'
+        self.name= 'irt'
+        self.version= '2PL'
+
+        model_params = {'l1':0, 'l2':0.01,
+                    'disc_stddev':1.0,
+                    'guess_minval':0,'guess_maxval':0,
+                    'train_guess':False,
+                    'train_disc':True,
+                    'guess_act':'linear',
+                    'units': 1,
+                    'activation': 'sigmoid',
+                    'optimizer': 'sgd',
+                    'loss': 'binary_crossentropy'
+                        }
+
+        self.set_params(params=model_params, set_by='model_init')
+
+@registry.register
+class KerasIrt3PLModel(GenIrtModel):
+    def __init__(self):
+        self.adapter = IrtKerasRegressor
+        self.module_name= 'embibe'
+        self.name= 'irt'
+        self.version= '3PL'#'default'
+
+        model_params = {'l1':0, 'l2':0.01,
+                    'disc_stddev':1.0,
+                    'guess_minval':-3.5,'guess_maxval':-2.5,
+                    'train_guess':True,
+                    'train_disc':True,
+                    'guess_act':'sigmoid',
+                    'units': 1,
+                    'activation': 'sigmoid',
+                    'optimizer': 'sgd',
+                    'loss': 'binary_crossentropy'
+                        }
+
+        self.set_params(params=model_params, set_by='model_init')
+
+
 class GeneralizedLinearModel(BaseModel):
     """
 	A base class for all generalized linear models.

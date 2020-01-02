@@ -122,7 +122,7 @@ def test_svd_reconstruction():
 
 def test_svd_sigma_vals():
     _, p_value = _run_decomposition_test(TruncatedSVD, 10)
-    assert p_value < 1e-01
+    assert p_value > 1e-01
 
 @pytest.mark.xfail()
 def test_linear_regression_ttest():
