@@ -6,6 +6,75 @@ import pickle
 import onnxmltools
 import numpy as np
 
+
+import matplotlib.pyplot as plt
+import time
+
+class IrtKerasRegressor():
+    def __init__(self, proxy_model, primal_model, **kwargs):
+        self.primal_model = primal_model
+        self.proxy_model = proxy_model
+        self.proxy_model.primal = self.primal_model
+        self.params = None
+    
+    def fit(self, x_user, x_questions, y_vals, **kwargs):
+        kwargs.setdefault('latent_traits',None)
+        kwargs.setdefault('batch_size',16)
+        kwargs.setdefault('epochs', 64)
+        kwargs.setdefault('validation_split',0.2)
+        
+        self.proxy_model.l_traits= kwargs['latent_traits']
+        
+        self.proxy_model.x_train_user= x_user
+        self.proxy_model.x_train_questions= x_questions
+        self.proxy_model.y_= y_vals
+        
+        self.l_traits= kwargs['latent_traits']
+        
+        print('\nIntitializing fit for scheme {}. . .\nBatch_size: {}; epochs: {};'.format('2', kwargs['batch_size'], kwargs['epochs']))
+        model = self.proxy_model.create_model()
+        t1= time.time()
+        self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])
+        exe_time = time.time()-t1
+        
+        self.model = model
+        #Following lets user access each coeffs as and when required
+        self.difficulty = self.coefficients()['difficulty_level']
+        self.discrimination = self.coefficients()['disc_param']
+        self.guessing = self.coefficients()['guessing_param']
+        
+        print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(self.proxy_model.x_train_user.shape[0],kwargs['epochs'], np.round(exe_time, decimals=3)))
+        print('\nUse object.plot() to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--difficulty, discrimination & guessing')
+        return self
+
+    def plot(self):
+        plt.plot(self.history.history['loss'])
+        plt.plot(self.history.history['val_loss'])
+        plt.title('Model loss for "3 PL model" scheme:{}'.format('2'))
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+
+        plt.legend(['train', 'validation'], loc= 'upper right')
+        return plt.show()
+
+    def coefficients(self):
+        #returns all key coefficients as dictionary
+        #a dict comprehension over list of layer number containing key coeffs.
+        #if self.p_scheme==1:
+        #    rel_layers_idx= [3,5,6]
+        #else:
+            #rel_layers_idx= [4,2,7]
+        rel_layers_idx= [4,2,7]
+        
+        coef ={self.model.layers[idx].name:self.model.layers[idx].get_weights()[0] for idx in rel_layers_idx}
+        if not self.proxy_model.version=='3PL':#for 1PL & 2PL
+            coef.update({'disc_param':np.exp(coef['disc_param'])})        
+        else:
+            coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
+            coef.update({'disc_param':np.exp(coef['disc_param'])})            
+        return coef
+
+
 class SklearnTfTransformer():
     """
 	Adapter to connect sklearn decomposition methods to respective TF implementations.
