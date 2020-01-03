@@ -7,7 +7,7 @@ import numpy as np
 from keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel, BaseTransformer
-from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnTfTransformer, SklearnPytorchClassifier
+from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnTfTransformer, SklearnPytorchClassifier, IrtKerasRegressor
 from ..layers.keras import DecisionTree
 from ..utils.functions import _parse_params
 import tensorflow as tf
@@ -23,7 +23,7 @@ from keras import initializers
 from keras.layers import Activation
 from keras import metrics
 
-class GenIrtModel(BaseModel):
+class GeneralisedIrtModel(BaseModel):
     def create_model(self, **kwargs):
         model_params = _parse_params(self._model_params, return_as='nested')
         model_params.update({'input_dims_users':self.x_train_user.shape[1],'input_dims_items':self.x_train_questions.shape[1]})
@@ -37,22 +37,26 @@ class GenIrtModel(BaseModel):
             #    kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),
             #    kernel_regularizer=regularizers.l2(0.01), name='latent_trait')(user_input_layer)
         else:
-            latent_trait = Dense(model_params['units'], use_bias=False,
-                kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),
-                kernel_regularizer=l1_l2(l1=model_params['l1'], l2= model_params['l2']), name='latent_trait')(user_input_layer)
+            latent_trait = Dense(model_params['ability_params']['units'], use_bias=False,
+                kernel_initializer= initializers.RandomNormal(mean=model_params['ability_params']['initializers']['dist']['normal']['mean'],
+                stddev=model_params['ability_params']['initializers']['dist']['normal']['stddev'], seed=None),
+                kernel_regularizer=l1_l2(l1=model_params['regularizers']['l1'], l2= model_params['regularizers']['l2']),
+                name='latent_trait')(user_input_layer)
 
         #2. kernel init set to RandomNorm(0,1)
         #b_j
-        difficulty_level = Dense(model_params['units'], use_bias=False,
-            kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),
+        difficulty_level = Dense(model_params['ability_params']['units'], use_bias=False,
+            kernel_initializer= initializers.RandomNormal(mean=model_params['diff_params']['initializers']['dist']['normal']['mean'],
+            stddev=model_params['diff_params']['initializers']['dist']['normal']['stddev'], seed=None),
             name='difficulty_level')(quest_input_layer)#b_j
 
         #3. kernel init set to RandomNorm(1,1)
         # Descrimination- also lamda_j
-        discrimination_param = Dense(model_params['units'], use_bias=False,
-            kernel_initializer= initializers.RandomNormal(mean=0, stddev=model_params['disc_stddev'], seed=None),
-            trainable=model_params['train_disc'],
-            activation= 'exponential',#kernel_constraint= constraints.NonNeg(),
+        discrimination_param = Dense(model_params['ability_params']['units'], use_bias=False,
+            kernel_initializer= initializers.RandomNormal(mean=model_params['disc_params']['initializers']['dist']['normal']['mean'],
+            stddev=model_params['disc_params']['initializers']['dist']['normal']['stddev'], seed=None),
+            trainable=model_params['disc_params']['train'],
+            activation= model_params['disc_params']['act'],#kernel_constraint= constraints.NonNeg(),
             name='disc_param')(quest_input_layer)
 
         #lamda_j*t_i
@@ -68,29 +72,28 @@ class GenIrtModel(BaseModel):
         sigmoid_layer= Activation('sigmoid', name='Sigmoid_func')(alpha_lambda_add)
 
         #c_j
-        guess_param = Dense(model_params['units'], use_bias=False,
-            kernel_initializer= initializers.RandomUniform(minval=model_params['guess_minval'], maxval=model_params['guess_maxval'], seed=None),  trainable=model_params['train_guess'],
-            activation=model_params['guess_act'], name='guessing_param')(quest_input_layer)
+        guess_param = Dense(model_params['ability_params']['units'], use_bias=False,
+            kernel_initializer= initializers.RandomUniform(minval=model_params['guess_params']['initializers']['dist']['uniform']['minval'],
+            maxval=model_params['guess_params']['initializers']['dist']['uniform']['maxval'], seed=None), trainable=model_params['guess_params']['train'],
+            activation=model_params['guess_params']['act'], name='guessing_param')(quest_input_layer)
 
         #5. Sigmoid positioning corrected as per 3PL expression
-
-
         #(1-c_j)
-        guess_param_interaction= Lambda(lambda x: K.constant(value=np.array([1])) - x, name='guess_param_inter.')(guess_param)
+        guess_param_interaction= Lambda(lambda x: K.constant(value=np.array([1 -model_params['guess_params']['slip']])) - x, name='guess_param_inter.')(guess_param)
 
         #(1-c_j)*sigmoid[]
-        guess_param_interaction= keras.layers.Multiply(name='disc/guess_param_inter.')([sigmoid_layer,
-                                                guess_param_interaction])
+        guess_param_interaction= keras.layers.Multiply(name='disc/guess_param_inter.')([sigmoid_layer, guess_param_interaction])
         #c_j+ (1-c_j)*sigmoid[]
         guess_param_interaction= keras.layers.Add(name='guess_param_inter/add')([guess_param, guess_param_interaction])
 
 
         #6. changed activation to just linear
-        prediction_output = Dense(model_params['units'], trainable=False, use_bias=False,kernel_initializer=keras.initializers.Ones(), name='prediction_layer')(guess_param_interaction)
+        prediction_output = Dense(model_params['hyper_params']['units'], trainable=False, use_bias=False,
+            kernel_initializer=keras.initializers.Ones(), name='prediction_layer')(guess_param_interaction)
 
 
         model_ = Model(inputs=[user_input_layer, quest_input_layer], outputs= prediction_output)
-        model_.compile(loss= 'binary_crossentropy', optimizer='sgd', metrics= ['mae', 'accuracy'])
+        model_.compile(loss= model_params['hyper_params']['loss'], optimizer=model_params['hyper_params']['optimizer'], metrics= ['mae', 'accuracy'])
         return model_
 
     def set_params(self, **kwargs):
@@ -115,66 +118,54 @@ class GenIrtModel(BaseModel):
 
     
 @registry.register
-class KerasIrt1PLModel(GenIrtModel):
+class KerasIrt1PLModel(GeneralisedIrtModel):
     def __init__(self):
         self.adapter = IrtKerasRegressor
-        self.module_name= 'embibe'
-        self.name= 'irt'
-        self.version= '1PL'
-        model_params = {'l1':0, 'l2':0,
-                        'disc_stddev':0,
-                        'guess_minval':0,'guess_maxval':0,
-                        'train_guess':False,
-                        'train_disc':False,
-                        'guess_act':'linear',
-                        'units': 1,
-                        'activation': 'sigmoid',
-                        'optimizer': 'sgd',
-                        'loss': 'binary_crossentropy'
+        self.module_name= 'mlsquare'#'embibe'
+        self.name= 'rasch'
+        self.version= 'default'
+        model_params = {'ability_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}}},
+                        'diff_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0}, 'uniform':{'minval':0, 'maxval':0}}}},
+                        'disc_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':0, 'maxval':0}}},'train':False, 'act':'exponential'},
+                        'guess_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':0, 'maxval':0}}}, 'train':False, 'act':'linear', 'slip':0},
+                        'regularizers':{'l1':0, 'l2':0},
+                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}
                         }
 
         self.set_params(params=model_params, set_by='model_init')
 
 @registry.register
-class KerasIrt2PLModel(GenIrtModel):
+class KerasIrt2PLModel(GeneralisedIrtModel):
     def __init__(self):
         self.adapter = IrtKerasRegressor
-        self.module_name= 'embibe'
-        self.name= 'irt'
-        self.version= '2PL'
+        self.module_name= 'mlsquare'#'embibe'
+        self.name= 'twoPl'
+        self.version= 'default'#'2PL'
 
-        model_params = {'l1':0, 'l2':0.01,
-                    'disc_stddev':1.0,
-                    'guess_minval':0,'guess_maxval':0,
-                    'train_guess':False,
-                    'train_disc':True,
-                    'guess_act':'linear',
-                    'units': 1,
-                    'activation': 'sigmoid',
-                    'optimizer': 'sgd',
-                    'loss': 'binary_crossentropy'
+        model_params = {'ability_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}}},
+                        'diff_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0}, 'uniform':{'minval':0, 'maxval':0}}}},
+                        'disc_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}},'train':True, 'act':'exponential'},
+                        'guess_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':0, 'maxval':0}}}, 'train':False, 'act':'linear', 'slip':0},
+                        'regularizers':{'l1':0, 'l2':0.01},
+                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}
                         }
 
         self.set_params(params=model_params, set_by='model_init')
 
 @registry.register
-class KerasIrt3PLModel(GenIrtModel):
+class KerasIrt3PLModel(GeneralisedIrtModel):
     def __init__(self):
         self.adapter = IrtKerasRegressor
-        self.module_name= 'embibe'
-        self.name= 'irt'
-        self.version= '3PL'#'default'
+        self.module_name= 'mlsquare'#'embibe'
+        self.name= 'tpm'
+        self.version= 'default'#'default'
 
-        model_params = {'l1':0, 'l2':0.01,
-                    'disc_stddev':1.0,
-                    'guess_minval':-3.5,'guess_maxval':-2.5,
-                    'train_guess':True,
-                    'train_disc':True,
-                    'guess_act':'sigmoid',
-                    'units': 1,
-                    'activation': 'sigmoid',
-                    'optimizer': 'sgd',
-                    'loss': 'binary_crossentropy'
+        model_params = {'ability_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}}},
+                        'diff_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0}, 'uniform':{'minval':0, 'maxval':0}}}},
+                        'disc_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}},'train':True, 'act':'exponential'},
+                        'guess_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':-3.5, 'maxval':-2.5}}}, 'train':True, 'act':'sigmoid', 'slip':0},
+                        'regularizers':{'l1':0, 'l2':0.01},
+                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}
                         }
 
         self.set_params(params=model_params, set_by='model_init')

@@ -16,7 +16,7 @@ class IrtKerasRegressor():
         self.proxy_model = proxy_model
         self.proxy_model.primal = self.primal_model
         self.params = None
-    
+
     def fit(self, x_user, x_questions, y_vals, **kwargs):
         kwargs.setdefault('latent_traits',None)
         kwargs.setdefault('batch_size',16)
@@ -31,7 +31,7 @@ class IrtKerasRegressor():
         
         self.l_traits= kwargs['latent_traits']
         
-        print('\nIntitializing fit for scheme {}. . .\nBatch_size: {}; epochs: {};'.format('2', kwargs['batch_size'], kwargs['epochs']))
+        print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
         model = self.proxy_model.create_model()
         t1= time.time()
         self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])
@@ -43,14 +43,14 @@ class IrtKerasRegressor():
         self.discrimination = self.coefficients()['disc_param']
         self.guessing = self.coefficients()['guessing_param']
         
-        print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(self.proxy_model.x_train_user.shape[0],kwargs['epochs'], np.round(exe_time, decimals=3)))
+        print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(self.proxy_model.x_train_user.shape[0], kwargs['epochs'], np.round(exe_time, decimals=3)))
         print('\nUse object.plot() to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--difficulty, discrimination & guessing')
         return self
 
     def plot(self):
         plt.plot(self.history.history['loss'])
         plt.plot(self.history.history['val_loss'])
-        plt.title('Model loss for "3 PL model" scheme:{}'.format('2'))
+        plt.title('Model loss for "{} model" '.format(self.proxy_model.name))
         plt.xlabel('epoch')
         plt.ylabel('loss')
 
