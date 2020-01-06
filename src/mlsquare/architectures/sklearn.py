@@ -38,23 +38,23 @@ class GeneralisedIrtModel(BaseModel):
             #    kernel_regularizer=regularizers.l2(0.01), name='latent_trait')(user_input_layer)
         else:
             latent_trait = Dense(model_params['ability_params']['units'], use_bias=False,
-                kernel_initializer= initializers.RandomNormal(mean=model_params['ability_params']['initializers']['dist']['normal']['mean'],
-                stddev=model_params['ability_params']['initializers']['dist']['normal']['stddev'], seed=None),
+                kernel_initializer= model_params['ability_params']['kernel_init'],# initializers.RandomNormal(mean=model_params['ability_params']['initializers']['dist']['normal']['mean'],
+                #stddev=model_params['ability_params']['initializers']['dist']['normal']['stddev'], seed=None),
                 kernel_regularizer=l1_l2(l1=model_params['regularizers']['l1'], l2= model_params['regularizers']['l2']),
                 name='latent_trait')(user_input_layer)
 
         #2. kernel init set to RandomNorm(0,1)
         #b_j
         difficulty_level = Dense(model_params['ability_params']['units'], use_bias=False,
-            kernel_initializer= initializers.RandomNormal(mean=model_params['diff_params']['initializers']['dist']['normal']['mean'],
-            stddev=model_params['diff_params']['initializers']['dist']['normal']['stddev'], seed=None),
+            kernel_initializer= model_params['diff_params']['kernel_init'],#initializers.RandomNormal(mean=model_params['diff_params']['initializers']['dist']['normal']['mean'],
+            #stddev=model_params['diff_params']['initializers']['dist']['normal']['stddev'], seed=None),
             name='difficulty_level')(quest_input_layer)#b_j
 
         #3. kernel init set to RandomNorm(1,1)
         # Descrimination- also lamda_j
         discrimination_param = Dense(model_params['ability_params']['units'], use_bias=False,
-            kernel_initializer= initializers.RandomNormal(mean=model_params['disc_params']['initializers']['dist']['normal']['mean'],
-            stddev=model_params['disc_params']['initializers']['dist']['normal']['stddev'], seed=None),
+            kernel_initializer= model_params['disc_params']['kernel_init'],#initializers.RandomNormal(mean=model_params['disc_params']['initializers']['dist']['normal']['mean'],
+            #stddev=model_params['disc_params']['initializers']['dist']['normal']['stddev'], seed=None),
             trainable=model_params['disc_params']['train'],
             activation= model_params['disc_params']['act'],#kernel_constraint= constraints.NonNeg(),
             name='disc_param')(quest_input_layer)
@@ -73,8 +73,8 @@ class GeneralisedIrtModel(BaseModel):
 
         #c_j
         guess_param = Dense(model_params['ability_params']['units'], use_bias=False,
-            kernel_initializer= initializers.RandomUniform(minval=model_params['guess_params']['initializers']['dist']['uniform']['minval'],
-            maxval=model_params['guess_params']['initializers']['dist']['uniform']['maxval'], seed=None), trainable=model_params['guess_params']['train'],
+            kernel_initializer= model_params['guess_params']['kernel_init'],#initializers.RandomUniform(minval=model_params['guess_params']['initializers']['dist']['uniform']['minval'],
+            #maxval=model_params['guess_params']['initializers']['dist']['uniform']['maxval'], seed=None), trainable=model_params['guess_params']['train'],
             activation=model_params['guess_params']['act'], name='guessing_param')(quest_input_layer)
 
         #5. Sigmoid positioning corrected as per 3PL expression
@@ -112,9 +112,25 @@ class GeneralisedIrtModel(BaseModel):
 
     def update_params(self, params):
         self._model_params.update(params)
+        self.get_initializers(self._model_params)
 
     def adapter(self):
         return self._adapter
+
+    def get_initializers(self, params):
+        default_params={'backend':'keras', 'distrib':'normal', 'mean':0, 'stddev':1,'minval':0, 'maxval':0}
+        for key, vals in params.items():
+            sub_dict= default_params.copy()
+            if 'init_params' in vals.keys():
+                sub_dict.update(params[key]['init_params'])
+                
+                if sub_dict['backend']=='keras' and sub_dict['distrib']=='normal':
+                    params[key].update({'kernel_init':initializers.RandomNormal(mean=sub_dict['mean'], stddev=sub_dict['stddev'])})
+                else:# sub_dict['backend']=='keras' and sub_dict['distrib']=='uniform'
+                    params[key].update({'kernel_init':initializers.RandomUniform(minval=sub_dict['minval'], maxval=sub_dict['maxval'])})
+        self._model_params.update(params)
+
+
 
     
 @registry.register
@@ -124,15 +140,15 @@ class KerasIrt1PLModel(GeneralisedIrtModel):
         self.module_name= 'mlsquare'#'embibe'
         self.name= 'rasch'
         self.version= 'default'
-        model_params = {'ability_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}}},
-                        'diff_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0}, 'uniform':{'minval':0, 'maxval':0}}}},
-                        'disc_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':0, 'maxval':0}}},'train':False, 'act':'exponential'},
-                        'guess_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':0, 'maxval':0}}}, 'train':False, 'act':'linear', 'slip':0},
+        model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
+                        'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
+                        'disc_params':{'units':1, 'init_params':{'stddev':0},'train':False, 'act':'exponential'},#default 'keras','normal'
+                        'guess_params':{'units':1, 'init_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
                         'regularizers':{'l1':0, 'l2':0},
-                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}
-                        }
-
+                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
+        
         self.set_params(params=model_params, set_by='model_init')
+        self.update_params(model_params)
 
 @registry.register
 class KerasIrt2PLModel(GeneralisedIrtModel):
@@ -142,15 +158,15 @@ class KerasIrt2PLModel(GeneralisedIrtModel):
         self.name= 'twoPl'
         self.version= 'default'#'2PL'
 
-        model_params = {'ability_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}}},
-                        'diff_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0}, 'uniform':{'minval':0, 'maxval':0}}}},
-                        'disc_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}},'train':True, 'act':'exponential'},
-                        'guess_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':0, 'maxval':0}}}, 'train':False, 'act':'linear', 'slip':0},
-                        'regularizers':{'l1':0, 'l2':0.01},
-                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}
-                        }
+        model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
+                        'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
+                        'disc_params':{'units':1, 'init_params':{},'train':True, 'act':'exponential'},#default 'keras','normal'
+                        'guess_params':{'units':1, 'init_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
+                        'regularizers':{'l1':0, 'l2':0},
+                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         self.set_params(params=model_params, set_by='model_init')
+        self.update_params(model_params)
 
 @registry.register
 class KerasIrt3PLModel(GeneralisedIrtModel):
@@ -159,16 +175,15 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
         self.module_name= 'mlsquare'#'embibe'
         self.name= 'tpm'
         self.version= 'default'#'default'
-
-        model_params = {'ability_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}}},
-                        'diff_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0}, 'uniform':{'minval':0, 'maxval':0}}}},
-                        'disc_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':1.0},'uniform':{'minval':0, 'maxval':0}}},'train':True, 'act':'exponential'},
-                        'guess_params':{'units':1, 'initializers':{'dist':{'normal':{'mean':0,'stddev':0},'uniform':{'minval':-3.5, 'maxval':-2.5}}}, 'train':True, 'act':'sigmoid', 'slip':0},
-                        'regularizers':{'l1':0, 'l2':0.01},
-                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}
-                        }
+        model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
+                        'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
+                        'disc_params':{'units':1, 'init_params':{},'train':True, 'act':'exponential'},#default 'keras','normal'
+                        'guess_params':{'units':1, 'init_params':{'distrib':'uniform', 'minval':-3.5, 'maxval':-2.5}, 'train':True, 'act':'linear', 'slip':0},#default 'keras','uniform'
+                        'regularizers':{'l1':0, 'l2':0},
+                        'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         self.set_params(params=model_params, set_by='model_init')
+        self.update_params(model_params)
 
 
 class GeneralizedLinearModel(BaseModel):
