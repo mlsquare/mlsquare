@@ -12,6 +12,7 @@ from keras import regularizers
 from keras import initializers
 from keras.layers import Activation
 from keras import metrics
+from dict_deep import *
 
 class GeneralisedIrtModel(BaseModel):
     def create_model(self, **kwargs):
@@ -105,21 +106,40 @@ class GeneralisedIrtModel(BaseModel):
         return self._adapter
 
     def get_initializers(self, params):
-        default_params={'backend':'keras', 'distrib':'normal', 'mean':0, 'stddev':1,'minval':0, 'maxval':0}
+        default_params= {}
+        backends_li= ['keras', 'pytorch']
+        dist_dict= {'normal':{'mean':0, 'stddev':1}, 'uniform':{'minval':0, 'maxval':0}}
+        for backend in backends_li:#prepares a nested default dictionary
+            for dist, pars in dist_dict.items():
+                deep_set(default_params, ['backend',backend,'distrib',dist],pars, 
+                    accessor=lambda default_params, k: default_params.setdefault(k, dict()))
+
+        self.default_backend_dist_params = default_params
+
         for key, vals in params.items():
             sub_dict= default_params.copy()
             if 'init_params' in vals.keys():
-                sub_dict.update(params[key]['init_params'])
-                
-                if sub_dict['backend']=='keras' and sub_dict['distrib']=='normal':
-                    params[key].update({'kernel_init':initializers.RandomNormal(mean=sub_dict['mean'], stddev=sub_dict['stddev'])})
-                else:# sub_dict['backend']=='keras' and sub_dict['distrib']=='uniform'
-                    params[key].update({'kernel_init':initializers.RandomUniform(minval=sub_dict['minval'], maxval=sub_dict['maxval'])})
+                custom_params= vals['init_params']
+                if 'backend' not in custom_params.keys() or 'backend'=='keras':
+                    rel_li= ['backend','keras','distrib', custom_params['distrib']] if 'distrib' in custom_params else ['backend','keras','distrib','normal']
+                    rel_dict = deep_get(sub_dict, rel_li)#relevant dictionary
+                    rel_dict.update(custom_params)#relevant updated dictionary#contains 'distrib':'uniform if listed
+                    params[key].update({'kernel_init':initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
+                else:#for non-keras backend
+                    if not custom_params['backend'] in self.default_backend_dist_params['backend'].keys():
+                        raise ValueError('Backend: {} and its distributions are not yet defined in Generalised Model'.format(custom_params['backend']))
+
+                    rel_li= ['backend',custom_params['backend'],'distrib', custom_params['distrib']]#relevant dictionary
+                    rel_dict = deep_get(sub_dict, rel_li).update(custom_params)#relevant updated dictionary#contains 'distrib':'uniform
+                    
+                    params[key].update({'kernel_init':initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else 
+                        initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
+
         self._model_params.update(params)
 
 
 
-    
+
 @registry.register
 class KerasIrt1PLModel(GeneralisedIrtModel):
     def __init__(self):
@@ -127,13 +147,14 @@ class KerasIrt1PLModel(GeneralisedIrtModel):
         self.module_name= 'mlsquare'#'embibe'
         self.name= 'rasch'
         self.version= 'default'
+
         model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
                         'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
                         'disc_params':{'units':1, 'init_params':{'stddev':0},'train':False, 'act':'exponential'},#default 'keras','normal'
                         'guess_params':{'units':1, 'init_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
                         'regularizers':{'l1':0, 'l2':0},
                         'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
-        
+
         self.set_params(params=model_params, set_by='model_init')
         self.update_params(model_params)
 
