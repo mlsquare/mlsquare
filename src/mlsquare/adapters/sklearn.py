@@ -10,27 +10,37 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+
 class IrtKerasRegressor():
     def __init__(self, proxy_model, primal_model, **kwargs):
+        kwargs.setdefault('params', None)
         self.primal_model = primal_model
         self.proxy_model = proxy_model
         self.proxy_model.primal = self.primal_model
-        self.params = None
+        self.params = kwargs['params']#None
+        #print('params:', self.params)
 
     def fit(self, x_user, x_questions, y_vals, **kwargs):
         kwargs.setdefault('latent_traits',None)
         kwargs.setdefault('batch_size',16)
         kwargs.setdefault('epochs', 64)
         kwargs.setdefault('validation_split',0.2)
-        
+        kwargs.setdefault('params', self.params)
+
         self.proxy_model.l_traits= kwargs['latent_traits']
-        
+
         self.proxy_model.x_train_user= x_user
         self.proxy_model.x_train_questions= x_questions
         self.proxy_model.y_= y_vals
         
         self.l_traits= kwargs['latent_traits']
-        
+        self.params = self.params or kwargs['params']#affirming if params is given in either of(init or fit) methods
+        if self.params != None: ## Validate implementation with different types of tune input
+            if not isinstance(self.params , dict):
+                raise TypeError("Params should be of type 'dict'")
+            self.params = _parse_params(self.params , return_as='flat')
+            self.proxy_model.update_params(self.params)
+
         print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
         model = self.proxy_model.create_model()
         t1= time.time()
