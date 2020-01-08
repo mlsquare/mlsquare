@@ -29,20 +29,20 @@ class GeneralisedIrtModel(BaseModel):
             #    kernel_regularizer=regularizers.l2(0.01), name='latent_trait')(user_input_layer)
         else:
             latent_trait = Dense(model_params['ability_params']['units'], use_bias=False,
-                kernel_initializer= model_params['ability_params']['kernel_init'],
+                kernel_initializer= model_params['ability_params']['kernel'],
                 kernel_regularizer=l1_l2(l1=model_params['regularizers']['l1'], l2= model_params['regularizers']['l2']),
-                name='latent_trait')(user_input_layer)
+                name='latent_trait/ability')(user_input_layer)
 
         #2. kernel init set to RandomNorm(0,1)
         #b_j
         difficulty_level = Dense(model_params['ability_params']['units'], use_bias=False,
-            kernel_initializer= model_params['diff_params']['kernel_init'],
+            kernel_initializer= model_params['diff_params']['kernel'],
             name='difficulty_level')(quest_input_layer)#b_j
 
         #3. kernel init set to RandomNorm(1,1)
         # Descrimination- also lamda_j
         discrimination_param = Dense(model_params['ability_params']['units'], use_bias=False,
-            kernel_initializer= model_params['disc_params']['kernel_init'],
+            kernel_initializer= model_params['disc_params']['kernel'],
             trainable=model_params['disc_params']['train'],
             activation= model_params['disc_params']['act'],
             name='disc_param')(quest_input_layer)
@@ -61,7 +61,7 @@ class GeneralisedIrtModel(BaseModel):
 
         #c_j
         guess_param = Dense(model_params['ability_params']['units'], use_bias=False,
-            kernel_initializer= model_params['guess_params']['kernel_init'],
+            kernel_initializer= model_params['guess_params']['kernel'],
             trainable=model_params['guess_params']['train'],
             activation=model_params['guess_params']['act'], name='guessing_param')(quest_input_layer)
 
@@ -94,11 +94,23 @@ class GeneralisedIrtModel(BaseModel):
             self._model_params = kwargs['params']
         else:
             self._model_params = kwargs['params']
+        self.get_initializers(self._model_params)#updates dict() with init defautls for the first time
 
     def get_params(self):
         return self._model_params
 
+
+    def tap_update(self, params):
+        params_to_tap=self._model_params
+        for k, v in params.items():
+            for key, val in v.items():
+                list_path= [k,key]
+                deep_set(params_to_tap, list_path, deep_get(params, list_path), 
+                    accessor=lambda params_to_tap, k: params_to_tap.setdefault(k, dict()))
+        self._model_params= params_to_tap  
+
     def update_params(self, params):
+        self.tap_update(params)
         self._model_params.update(params)
         self.get_initializers(self._model_params)
 
@@ -118,21 +130,22 @@ class GeneralisedIrtModel(BaseModel):
 
         for key, vals in params.items():
             sub_dict= default_params.copy()
-            if 'init_params' in vals.keys():
-                custom_params= vals['init_params']
+            if 'kernel_params' in vals.keys() and 'kernel' not in vals.keys():#dodges params containing 'kernel':init_objects
+                custom_params= vals['kernel_params']
                 if 'backend' not in custom_params.keys() or 'backend'=='keras':
                     rel_li= ['backend','keras','distrib', custom_params['distrib']] if 'distrib' in custom_params else ['backend','keras','distrib','normal']
                     rel_dict = deep_get(sub_dict, rel_li)#relevant dictionary
                     rel_dict.update(custom_params)#relevant updated dictionary#contains 'distrib':'uniform if listed
-                    params[key].update({'kernel_init':initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
+                    params[key].update({'kernel':initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
                 else:#for non-keras backend
                     if not custom_params['backend'] in self.default_backend_dist_params['backend'].keys():
                         raise ValueError('Backend: {} and its distributions are not yet defined in Generalised Model'.format(custom_params['backend']))
 
                     rel_li= ['backend',custom_params['backend'],'distrib', custom_params['distrib']]#relevant dictionary
-                    rel_dict = deep_get(sub_dict, rel_li).update(custom_params)#relevant updated dictionary#contains 'distrib':'uniform
+                    rel_dict = deep_get(sub_dict, rel_li)
+                    rel_dict.update(custom_params)#relevant updated dictionary#contains 'distrib':'uniform
                     
-                    params[key].update({'kernel_init':initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else 
+                    params[key].update({'kernel':initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else 
                         initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
 
         self._model_params.update(params)
@@ -148,15 +161,15 @@ class KerasIrt1PLModel(GeneralisedIrtModel):
         self.name= 'rasch'
         self.version= 'default'
 
-        model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
-                        'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
-                        'disc_params':{'units':1, 'init_params':{'stddev':0},'train':False, 'act':'exponential'},#default 'keras','normal'
-                        'guess_params':{'units':1, 'init_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
+        model_params = {'ability_params':{'units':1, 'kernel_params':{}},#default 'keras','normal'
+                        'diff_params':{'units':1, 'kernel_params':{}},#default 'keras','normal'
+                        'disc_params':{'units':1, 'kernel_params':{'stddev':0},'train':False, 'act':'exponential'},#default 'keras','normal'
+                        'guess_params':{'units':1, 'kernel_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
                         'regularizers':{'l1':0, 'l2':0},
                         'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         self.set_params(params=model_params, set_by='model_init')
-        self.update_params(model_params)
+        #self.update_params(model_params)
 
 @registry.register
 class KerasIrt2PLModel(GeneralisedIrtModel):
@@ -166,15 +179,15 @@ class KerasIrt2PLModel(GeneralisedIrtModel):
         self.name= 'twoPl'
         self.version= 'default'#'2PL'
 
-        model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
-                        'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
-                        'disc_params':{'units':1, 'init_params':{},'train':True, 'act':'exponential'},#default 'keras','normal'
-                        'guess_params':{'units':1, 'init_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
+        model_params = {'ability_params':{'units':1, 'kernel_params':{}},#default 'keras','normal'
+                        'diff_params':{'units':1, 'kernel_params':{}},#default 'keras','normal'
+                        'disc_params':{'units':1, 'kernel_params':{},'train':True, 'act':'exponential'},#default 'keras','normal'
+                        'guess_params':{'units':1, 'kernel_params':{'distrib':'uniform'}, 'train':False, 'act':'linear', 'slip':0},#default 'keras','uniform'
                         'regularizers':{'l1':0, 'l2':0},
                         'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         self.set_params(params=model_params, set_by='model_init')
-        self.update_params(model_params)
+        #self.update_params(model_params)
 
 @registry.register
 class KerasIrt3PLModel(GeneralisedIrtModel):
@@ -183,12 +196,12 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
         self.module_name= 'mlsquare'#'embibe'
         self.name= 'tpm'
         self.version= 'default'#'default'
-        model_params = {'ability_params':{'units':1, 'init_params':{}},#default 'keras','normal'
-                        'diff_params':{'units':1, 'init_params':{}},#default 'keras','normal'
-                        'disc_params':{'units':1, 'init_params':{},'train':True, 'act':'exponential'},#default 'keras','normal'
-                        'guess_params':{'units':1, 'init_params':{'distrib':'uniform', 'minval':-3.5, 'maxval':-2.5}, 'train':True, 'act':'linear', 'slip':0},#default 'keras','uniform'
+        model_params = {'ability_params':{'units':1, 'kernel_params':{}},#default 'keras','normal'
+                        'diff_params':{'units':1, 'kernel_params':{}},#default 'keras','normal'
+                        'disc_params':{'units':1, 'kernel_params':{},'train':True, 'act':'exponential'},#default 'keras','normal'
+                        'guess_params':{'units':1, 'kernel_params':{'distrib':'uniform', 'minval':-3.5, 'maxval':-2.5}, 'train':True, 'act':'linear', 'slip':0},#default 'keras','uniform'
                         'regularizers':{'l1':0, 'l2':0},
                         'hyper_params':{'units':1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         self.set_params(params=model_params, set_by='model_init')
-        self.update_params(model_params)
+        #self.update_params(model_params)
