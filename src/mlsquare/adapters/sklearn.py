@@ -12,13 +12,59 @@ import time
 
 
 class IrtKerasRegressor():
+    """
+	Adapter to connect Irt Rasch One Parameter, Two parameter model and Birnbaum's Three Parameter model with keras models.
+
+    This class is used as an adapter for a IRT signature model that initilalises with similar parameters along the line of R's
+    Rasch and tpm(3-PL) models from ltm package that are as proxy models using keras.
+
+    Parameters
+    ----------
+    proxy_model : proxy model instance
+        The proxy model passed from dope.
+
+    primal_model : primal model instance
+        The primal model passed from dope.
+
+    params : dict, optional
+        Additional model params passed by the user.
+
+
+    Methods
+    -------
+	fit(X_users, X_questions, y)
+        Method to train a transpiled model.
+
+    plot()
+        Method to plot model's train-validation loss.
+
+    coefficients()
+        Method to output model coefficients -- Difficulty level,
+        Discrimination parameter, Guessing params
+
+	save(filename)
+        Method to save a trained model. This method saves
+        the models in three formals -- pickle, h5 and onnx.
+        Expects 'filename' as a string.
+
+	score(X, y)
+        Method to score a trained model.
+
+	predict(X)
+        This method returns the predicted values for a
+        trained model.
+
+	explain()
+        Method to provide model interpretations(Yet to be implemented)
+
+    """
+
     def __init__(self, proxy_model, primal_model, **kwargs):
         kwargs.setdefault('params', None)
         self.primal_model = primal_model
         self.proxy_model = proxy_model
         self.proxy_model.primal = self.primal_model
-        self.params = kwargs['params']#None
-        #print('params:', self.params)
+        self.params = kwargs['params']
 
     def fit(self, x_user, x_questions, y_vals, **kwargs):
         kwargs.setdefault('latent_traits',None)
@@ -34,7 +80,7 @@ class IrtKerasRegressor():
         self.proxy_model.y_= y_vals
         
         self.l_traits= kwargs['latent_traits']
-        self.params = self.params or kwargs['params']#affirming if params is given in either of(init or fit) methods
+        self.params = self.params or kwargs['params']#affirming if params are given in either of(init or fit) methods
         if self.params != None: ## Validate implementation with different types of tune input
             if not isinstance(self.params , dict):
                 raise TypeError("Params should be of type 'dict'")
@@ -68,12 +114,6 @@ class IrtKerasRegressor():
         return plt.show()
 
     def coefficients(self):
-        #returns all key coefficients as dictionary
-        #a dict comprehension over list of layer number containing key coeffs.
-        #if self.p_scheme==1:
-        #    rel_layers_idx= [3,5,6]
-        #else:
-            #rel_layers_idx= [4,2,7]
         rel_layers_idx= [4,2,7]
         
         coef ={self.model.layers[idx].name:self.model.layers[idx].get_weights()[0] for idx in rel_layers_idx}
