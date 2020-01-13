@@ -124,6 +124,14 @@ class IrtKerasRegressor():
             coef.update({'disc_param':np.exp(coef['disc_param'])})            
         return coef
 
+    def predict(self, x_user, x_questions):
+        if len(x_user.shape)!=len(self.proxy_model.x_train_user.shape) or len(x_questions.shape)!=len(self.proxy_model.x_train_user.shape):
+            raise ValueError("While checking User/Question input shape, Expected users to have shape(None,{}) and questions to have shape(None,{})".format(self.proxy_model.x_train_user.shape[1], self.proxy_model.x_train_questions.shape[1]))
+        if x_user.shape[1]!=self.proxy_model.x_train_user.shape[1] or x_questions.shape[1]!=self.proxy_model.x_train_questions.shape[1]:
+            raise ValueError("User/Question seem to be an anomaly to current training dataset; Expected Users to have shape(None,{}) and Questions to have shape(None,{})".format(self.proxy_model.x_train_user.shape[1], self.proxy_model.x_train_questions.shape[1]))
+        pred= self.model.predict([x_user, x_questions])
+        return pred
+
 
 class SklearnTfTransformer():
     """
