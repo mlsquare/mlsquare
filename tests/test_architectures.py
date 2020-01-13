@@ -12,9 +12,13 @@ from keras.utils import to_categorical
 from mlsquare.base import registry
 from mlsquare.adapters import SklearnKerasClassifier
 from mlsquare.architectures.sklearn import GeneralizedLinearModel, KernelGeneralizedLinearModel, CART
-from datasets import _load_diabetes, _load_iris, _load_boston
+from datasets import _load_diabetes, _load_iris, _load_boston, _load_simIrt
 from sklearn.decomposition import TruncatedSVD
 import tensorflow as tf
+
+def _load_irt_data():
+    x_user, x_question, y = _load_simIrt()
+    return x_user, x_question, y
 
 def _load_decomposition_data():
     X, Y = _load_boston()
@@ -123,6 +127,19 @@ def test_svd_reconstruction():
 def test_svd_sigma_vals():
     _, p_value = _run_decomposition_test(TruncatedSVD, 10)
     assert p_value > 1e-01
+
+def _run_irt_ttest(primal_model_class, num_components, method=2):
+    x_user, x_question, y = _load_simIrt()
+    primal_model = primal_model_class()
+    model_skeleton, adapt = registry[('mlsquare', primal_model.__class__.__name__)]['default']
+    proxy_model = adapt(model_skeleton, primal_model)
+
+    x_user = to_categorical(x_user, num_classes =x_user.nunique())
+    x_quest = to_categorical(x_question, num_classes =x_question.nunique())
+
+    proxy_model.fit(x_user= x_user, x_questions= x_quest, y_vals= y, batch_size=64, epochs= epochs)
+    pred = proxy_model.predict()
+
 
 @pytest.mark.xfail()
 def test_linear_regression_ttest():

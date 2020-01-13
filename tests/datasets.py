@@ -10,6 +10,16 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 
+
+def _load_simIrt():
+    col_name = ['question_code', 'user_id', 'difficulty', 'ability', 'response', 'correctness']
+    data = pd.read_csv('./datasets/sim_irt_100_by_100.csv')
+
+    X_user = data[col_name[1]].apply(lambda x: lbe.fit_transform(x))
+    X_quest = data[col_name[0]].apply(lambda x: lbe.fit_transform(x))
+    y = data[['correctness']].values
+    return X_user, X_quest, y
+
 def _load_boston():
     data = pd.read_csv('./datasets/boston.csv')
     X = data.iloc[:, :-1]
