@@ -15,10 +15,22 @@ from mlsquare.architectures.sklearn import GeneralizedLinearModel, KernelGeneral
 from datasets import _load_diabetes, _load_iris, _load_boston, _load_simIrt
 from sklearn.decomposition import TruncatedSVD
 import tensorflow as tf
+from mlsquare.models.embibe import rasch
 
 def _load_irt_data():
-    x_user, x_question, y = _load_simIrt()
-    return x_user, x_question, y
+    col_name = ['question_code', 'user_id', 'difficulty', 'ability', 'response']
+    X,y =_load_simIrt()
+    xtrain, xtest, ytrain, ytest= train_test_split(X, y, test_size=0.3, random_state=0)
+    x_train_u= xtrain[[col_name[1]]]
+    x_train_q= xtrain[[col_name[0]]]
+    y_train = ytrain
+
+    x_test_u= xtest[[col_name[1]]]
+    x_test_q= xtest[[col_name[0]]]
+    pij_true= xtest[[col_name[-1]]]
+    t_abilities= sorted({_.user_id:_.ability for _ in X.itertuples(index=True)}.items())
+    t_abilities= np.array(list(dict(t_abilities).values()))
+    return x_train_u, x_train_q, y_train, x_test_u, x_test_q, pij_true, t_abilities
 
 def _load_decomposition_data():
     X, Y = _load_boston()
@@ -120,6 +132,32 @@ def _run_decomposition_test(primal_model_class, num_components):
 
     return result, p_value
 
+def _run_irt_ttest(primal_model_class, epochs):
+    x_user, x_question, y, x_test_user, x_test_quest, pij_true, true_abiltities = _load_irt_data()
+    primal_model = primal_model_class()
+    model_skeleton, adapt = registry[('mlsquare', primal_model.__class__.__name__)]['default']
+    proxy_model = adapt(model_skeleton, primal_model)
+
+    x_user = to_categorical(x_user.values, num_classes =x_user.nunique()[0])
+    x_quest = to_categorical(x_question.values, num_classes =x_question.nunique()[0])
+    proxy_model.fit(x_user= x_user, x_questions= x_quest, y_vals= y, batch_size=64, epochs= epochs)
+
+    x_test_user = to_categorical(x_test_user.values, num_classes =x_test_user.nunique()[0])
+    x_test_quest = to_categorical(x_test_quest.values, num_classes =x_test_quest.nunique()[0])
+    pij_est = proxy_model.predict(x_test_user, x_test_quest)
+
+    pij_est= pij_est.reshape(-1)
+    pij_true = pij_true.values.reshape(-1)
+    est_abilities= [layer.get_weights()[0] for layer in proxy_model.model.layers if layer.name== 'latent_trait/ability']
+    est_abilities= est_abilities[0].reshape(-1)
+
+    _, p_val_abl= stats.ttest_rel(est_abilities, true_abiltities)
+    _, p_value_pred = stats.ttest_rel(pij_est, pij_true)#est vs. true
+    _, p_value_dist = stats.kstest(est_abilities, 'norm')#Kolmogorov-Smirnov
+
+    return p_val_abl, p_value_pred, p_value_dist
+
+
 def test_svd_reconstruction():
     result, _ = _run_decomposition_test(TruncatedSVD, 10)
     assert result is True
@@ -128,18 +166,16 @@ def test_svd_sigma_vals():
     _, p_value = _run_decomposition_test(TruncatedSVD, 10)
     assert p_value > 1e-01
 
-def _run_irt_ttest(primal_model_class, num_components, method=2):
-    x_user, x_question, y = _load_simIrt()
-    primal_model = primal_model_class()
-    model_skeleton, adapt = registry[('mlsquare', primal_model.__class__.__name__)]['default']
-    proxy_model = adapt(model_skeleton, primal_model)
+@pytest.mark.xfail()
+def test_irt_ability_dist():
+    _ , _, pval = _run_irt_ttest(rasch, 200)
+    assert pval>0.05
 
-    x_user = to_categorical(x_user, num_classes =x_user.nunique())
-    x_quest = to_categorical(x_question, num_classes =x_question.nunique())
-
-    proxy_model.fit(x_user= x_user, x_questions= x_quest, y_vals= y, batch_size=64, epochs= epochs)
-    pred = proxy_model.predict()
-
+@pytest.mark.xfail()
+def test_irt_prediction_abilities():
+    pval_abl, pval_pred, _ = _run_irt_ttest(rasch, 200)
+    assert pval_pred<0.1
+    assert pval_abl<0.1
 
 @pytest.mark.xfail()
 def test_linear_regression_ttest():

@@ -121,7 +121,7 @@ class IrtKerasRegressor():
             coef.update({'disc_param':np.exp(coef['disc_param'])})        
         else:
             coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
-            coef.update({'disc_param':np.exp(coef['disc_param'])})            
+            coef.update({'disc_param':np.exp(coef['disc_param'])})
         return coef
 
     def predict(self, x_user, x_questions):
