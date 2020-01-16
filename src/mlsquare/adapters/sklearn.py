@@ -114,10 +114,13 @@ class IrtKerasRegressor():
         return plt.show()
 
     def coefficients(self):
-        rel_layers_idx= [4,2,7]
-        
+        rel_layers_idx=list()
+        for idx, layer in enumerate(self.model.layers):
+            if layer.name in ['latent_trait/ability', 'difficulty_level', 'disc_param', 'guessing_param']: 
+                rel_layers_idx.append(idx)
+
         coef ={self.model.layers[idx].name:self.model.layers[idx].get_weights()[0] for idx in rel_layers_idx}
-        if not self.proxy_model.version=='3PL':#for 1PL & 2PL
+        if not self.proxy_model.name=='tpm':#for 1PL & 2PL
             coef.update({'disc_param':np.exp(coef['disc_param'])})        
         else:
             coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
