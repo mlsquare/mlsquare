@@ -123,7 +123,7 @@ class IrtKerasRegressor():
         if not self.proxy_model.name=='tpm':#for 1PL & 2PL
             coef.update({'disc_param':np.exp(coef['disc_param'])})        
         else:
-            coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
+            #coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
             coef.update({'disc_param':np.exp(coef['disc_param'])})
         return coef
 
