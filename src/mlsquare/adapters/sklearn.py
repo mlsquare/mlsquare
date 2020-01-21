@@ -92,13 +92,13 @@ class IrtKerasRegressor():
         t1= time.time()
         self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])
         exe_time = time.time()-t1
-        
+
         self.model = model
         #Following lets user access each coeffs as and when required
         self.difficulty = self.coefficients()['difficulty_level']
         self.discrimination = self.coefficients()['disc_param']
         self.guessing = self.coefficients()['guessing_param']
-        
+
         print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(self.proxy_model.x_train_user.shape[0], kwargs['epochs'], np.round(exe_time, decimals=3)))
         print('\nUse object.plot() to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--difficulty, discrimination & guessing')
         return self
@@ -116,15 +116,18 @@ class IrtKerasRegressor():
     def coefficients(self):
         rel_layers_idx=list()
         for idx, layer in enumerate(self.model.layers):
-            if layer.name in ['latent_trait/ability', 'difficulty_level', 'disc_param', 'guessing_param']: 
+            if layer.name in ['latent_trait/ability', 'difficulty_level', 'disc_param', 'guessing_param', 'slip_param']:
                 rel_layers_idx.append(idx)
 
         coef ={self.model.layers[idx].name:self.model.layers[idx].get_weights()[0] for idx in rel_layers_idx}
-        if not self.proxy_model.name=='tpm':#for 1PL & 2PL
-            coef.update({'disc_param':np.exp(coef['disc_param'])})        
-        else:
-            #coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
-            coef.update({'disc_param':np.exp(coef['disc_param'])})
+        if self.proxy_model.name=='tpm':
+            coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
+        coef.update({'disc_param':np.exp(coef['disc_param'])})
+        #if not self.proxy_model.name=='tpm':#for 1PL & 2PL
+        #    coef.update({'disc_param':np.exp(coef['disc_param'])})        
+        #else:
+        #    coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
+        #    coef.update({'disc_param':np.exp(coef['disc_param'])})
         return coef
 
     def predict(self, x_user, x_questions):
