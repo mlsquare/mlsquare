@@ -9,6 +9,9 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import time
+import keras.backend as K
+import warnings
+warnings.filterwarnings("ignore")
 
 
 class IrtKerasRegressor():
@@ -86,6 +89,9 @@ class IrtKerasRegressor():
                 raise TypeError("Params should be of type 'dict'")
             self.params = _parse_params(self.params , return_as='flat')
             self.proxy_model.update_params(self.params)
+            if self.proxy_model.name is 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():#triggers for fourPL model
+                if self.params['slip_params']['train']:
+                    self.proxy_model.name= 'fourPL'
 
         print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
         model = self.proxy_model.create_model()
@@ -98,9 +104,20 @@ class IrtKerasRegressor():
         self.difficulty = self.coefficients()['difficulty_level']
         self.discrimination = self.coefficients()['disc_param']
         self.guessing = self.coefficients()['guessing_param']
+        self.slip = self.coefficients()['slip_param']
+
+        num_trainables= np.sum([K.count_params(layer) for layer in self.model.trainable_weights])
+        sample_size = y_vals.shape[0]
+        log_lik, _, _= self.model.evaluate(x =[x_user, x_questions], y= y_vals)
+
+        self.AIC = 2*num_trainables - 2*np.log(log_lik)
+        self.AICc= self.AIC + (2*np.square(num_trainables) + 2*num_trainables)/(sample_size - num_trainables - 1)
 
         print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(self.proxy_model.x_train_user.shape[0], kwargs['epochs'], np.round(exe_time, decimals=3)))
-        print('\nUse object.plot() to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--difficulty, discrimination & guessing')
+        print('\nAIC value: {} and AICc value: {}'.format(np.round(self.AIC,3), np.round(self.AICc,3)))
+        
+        print('\nUse `object.plot()` to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--Question difficulty, discrimination, guessing & slip')
+        print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
         return self
 
     def plot(self):
@@ -120,8 +137,11 @@ class IrtKerasRegressor():
                 rel_layers_idx.append(idx)
 
         coef ={self.model.layers[idx].name:self.model.layers[idx].get_weights()[0] for idx in rel_layers_idx}
-        if self.proxy_model.name=='tpm':
-            coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
+        t_4PL= {'tpm':['guessing_param'],'fourPL':['guessing_param', 'slip_param']}
+        if self.proxy_model.name in t_4PL.keys():#reporting guess & slip
+            for layer in t_4PL[self.proxy_model.name]:
+                coef.update({layer:np.exp(coef[layer])/(1+ np.exp(coef[layer]))})
+        
         coef.update({'disc_param':np.exp(coef['disc_param'])})
         #if not self.proxy_model.name=='tpm':#for 1PL & 2PL
         #    coef.update({'disc_param':np.exp(coef['disc_param'])})        
