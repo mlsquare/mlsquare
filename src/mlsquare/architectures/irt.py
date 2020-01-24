@@ -165,7 +165,7 @@ class GeneralisedIrtModel(BaseModel):
             if 'kernel' in v and 'kernel_params' not in v:
                 deep_del(params_to_tap, [k, 'kernel_params'])
             if 'bias_param' in v.keys():
-                params_to_tap[k]['use_bias']= True
+                params_to_tap[k]['use_bias']= True#self._model_params[k]['use_bias']= True
             for key, val in v.items():
                 list_path = [k, key]
                 deep_set(params_to_tap, list_path, deep_get(params, list_path),
@@ -310,8 +310,8 @@ class KerasIrt1PLModel(GeneralisedIrtModel):
         model_params = {'ability_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'diff_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'disc_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'train':False, 'act':'exponential', 'use_bias':False},
-                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'train': False, 'act': 'sigmoid', 'use_bias':False},
-                        'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'train': False, 'act': 'sigmoid', 'use_bias':False},
+                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5,'train': False, 'act': 'sigmoid', 'use_bias':True},
+                        'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
         self.set_params(params=model_params, set_by='model_init')
@@ -329,8 +329,8 @@ class KerasIrt2PLModel(GeneralisedIrtModel):
         model_params = {'ability_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'diff_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'disc_params': {'units': 1, 'kernel_params': {}, 'train': True, 'act':'exponential', 'use_bias':False},
-                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'train': False, 'act': 'sigmoid', 'use_bias':False},
-                        'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'train': False, 'act': 'sigmoid', 'use_bias':False},
+                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
+                        'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
