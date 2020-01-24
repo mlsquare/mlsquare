@@ -1,6 +1,7 @@
 import pytest
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, Lasso, ElasticNet
 from sklearn.svm import LinearSVC, SVC
@@ -12,7 +13,7 @@ from keras.utils import to_categorical
 from mlsquare.base import registry
 from mlsquare.adapters import SklearnKerasClassifier
 from mlsquare.architectures.sklearn import GeneralizedLinearModel, KernelGeneralizedLinearModel, CART
-from datasets import _load_diabetes, _load_iris, _load_boston, _load_simIrt
+from datasets import _load_diabetes, _load_iris, _load_boston, _load_simIrt, _load_1PL_IrtData
 from sklearn.decomposition import TruncatedSVD
 import tensorflow as tf
 from mlsquare.models.embibe import rasch
@@ -31,6 +32,25 @@ def _load_irt_data():
     t_abilities= sorted({_.user_id:_.ability for _ in X.itertuples(index=True)}.items())
     t_abilities= np.array(list(dict(t_abilities).values()))
     return x_train_u, x_train_q, y_train, x_test_u, x_test_q, pij_true, t_abilities
+
+def _load_1PL_data_params_combinations():
+    xtrain, y_train, x_train_user, x_train_questions = _load_1PL_IrtData()
+
+    layer_name= ['latent_trait/ability','difficulty_level', 'disc_param', 'guessing_param', 'slip_param']
+    model_param_keys= ['ability_params', 'diff_params', 'disc_params', 'guess_params', 'slip_params']
+    params_layer_dict = dict(zip(model_param_keys,layer_name))
+
+    x= np.zeros((32,5))#Placeholder for all possible layer combinations
+    for comb in range(x.shape[0]):
+        rep = np.array(list(np.binary_repr(comb)), dtype= np.int8)#binary analog
+        np.copyto(x[comb][: rep.shape[0]], rep)
+
+    df =pd.DataFrame(x, columns= model_param_keys)
+    for col in df.columns:
+        df[col]= df[col].apply(lambda x: col if x==1 else 0)
+    df.drop_duplicates()
+
+    return xtrain, y_train, x_train_user, x_train_questions, df, params_layer_dict
 
 def _load_decomposition_data():
     X, Y = _load_boston()
@@ -132,6 +152,40 @@ def _run_decomposition_test(primal_model_class, num_components):
 
     return result, p_value
 
+def _irt_1PL_bias_update_test(primal_model_class):
+    xtrain, y_train, x_train_user, x_train_questions, df, params_layer_dict = _load_1PL_data_params_combinations()
+    primal_model = primal_model_class()
+    model_skeleton, adapt = registry[('mlsquare', primal_model.__class__.__name__)]['default']
+
+    results= []
+    input_bias_values= []
+    obtained_bias_values=[]
+    for val in df.values[:8]:
+        layer_keys = val[np.where(val!=0)]
+        random_bias = np.random.randint(2,7, len(layer_keys))
+        input_bias_values.append(random_bias.tolist())
+        bias_list = [{'bias_param':v} for v in random_bias]
+        params_ = dict(zip(layer_keys, bias_list))
+
+        proxy_model = adapt(model_skeleton, primal_model)
+        proxy_model.fit(x_user= x_train_user, x_questions= x_train_questions, y_vals= y_train, batch_size= 30, epochs=1, params=params_)
+
+        for k1, v1 in params_layer_dict.items():
+            for idx, layer in enumerate(proxy_model.model.layers):
+                if layer.name==v1:
+                    params_layer_dict[k1]= idx
+        res= []
+        obtained_bias_=[]
+        for keys, vals in params_.items():
+            obtained_bias = proxy_model.model.layers[params_layer_dict[keys]].get_config()['bias_initializer']['config']['value']
+            res.append(vals['bias_param']==obtained_bias)
+            obtained_bias_.append(obtained_bias)
+
+        results.append(res)
+        obtained_bias_values.append(obtained_bias_)
+    return input_bias_values, obtained_bias_values, results
+
+
 def _run_irt_ttest(primal_model_class, epochs):
     x_user, x_question, y, x_test_user, x_test_quest, pij_true, true_abiltities = _load_irt_data()
     primal_model = primal_model_class()
@@ -157,6 +211,10 @@ def _run_irt_ttest(primal_model_class, epochs):
 
     return p_val_abl, p_value_pred, p_value_dist
 
+def test_1PL_bias_updation_functionality():
+    input_b, obtained_b, comp_results = _irt_1PL_bias_update_test(rasch)
+    #print('\ninputs:',input_b,'\noutputs:',obtained_b)
+    assert input_b==obtained_b
 
 def test_svd_reconstruction():
     result, _ = _run_decomposition_test(TruncatedSVD, 10)
