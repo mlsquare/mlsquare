@@ -347,8 +347,8 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
         model_params = {'ability_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'diff_params': {'units': 1, 'kernel_params': {},'use_bias':False},
                         'disc_params': {'units': 1, 'kernel_params': {}, 'train': True, 'act':'exponential', 'use_bias':False},
-                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform', 'minval': -3.5, 'maxval': -2.5}, 'train': True, 'act': 'sigmoid', 'use_bias':False},
-                        'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'train': False, 'act': 'sigmoid', 'use_bias':False},
+                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform', 'minval': 0, 'maxval': -2.5}, 'train': True, 'act': 'sigmoid', 'use_bias':True},
+                        'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
