@@ -166,6 +166,11 @@ class GeneralisedIrtModel(BaseModel):
                 deep_del(params_to_tap, [k, 'kernel_params'])
             if 'bias_param' in v.keys():
                 params_to_tap[k]['use_bias']= True#self._model_params[k]['use_bias']= True
+            if 'search_algo' not in v.keys():
+                params_to_tap[k].update({'search_algo': None})
+            #else:
+             #   params_to_tap[k].update({'search_algo':self.params.get('search_algo')})
+                #{'search_algo': self.params.get('search_algo')})
             for key, val in v.items():
                 list_path = [k, key]
                 deep_set(params_to_tap, list_path, deep_get(params, list_path),
@@ -347,7 +352,7 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
         model_params = {'ability_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'diff_params': {'units': 1, 'kernel_params': {},'use_bias':False},
                         'disc_params': {'units': 1, 'kernel_params': {}, 'train': True, 'act':'exponential', 'use_bias':False},
-                        'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform', 'minval': 0, 'maxval': -2.5}, 'train': True, 'act': 'sigmoid', 'use_bias':True},
+                        'guess_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3, 'train': True, 'act': 'sigmoid', 'use_bias':True},#{'distrib': 'uniform', 'minval': 0, 'maxval': -2.5}
                         'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
