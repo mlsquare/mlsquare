@@ -19,6 +19,7 @@ import warnings
 from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
 from hyperopt import hp
+import copy
 
 warnings.filterwarnings("ignore")
 
@@ -261,8 +262,9 @@ class IrtKerasRegressor():
         if not isinstance(nas_params, dict):
             raise TypeError("nas_params should be of type 'dict'")
         
-        space= nas_params['search_space'] if 'search_space' in nas_params else {"guess_params.regularizers.l1": hp.uniform("l1", 0, 0.1),
-            "guess_params.regularizers.l2": hp.uniform("l2", 0, 0.1)}
+        space= nas_params['search_space'] #if 'search_space' in nas_params else {"guess_params.regularizers.l1": hp.uniform("bias_param", 0, 0.1),
+            #"guess_params.regularizers.l2": hp.uniform("guess_params.regularizers.l2", 0, 0.1)}
+        print('###space:', space)
 
         def_dict={'search_methods':
                     {
@@ -273,7 +275,7 @@ class IrtKerasRegressor():
                                     }
                     }
                 }
-        algo_name= nas_params['search_algo']
+        algo_name= nas_params['search_algo_name']
         #print(algo_name)
         params_= def_dict['search_methods'][algo_name]
         #print(params_)
@@ -291,8 +293,11 @@ class IrtKerasRegressor():
                  num_cpus=4)
 
         def process_config(config):
-            params= self.proxy_model.get_params().copy()
+            params= copy.deepcopy(self.proxy_model.get_params())#.copy()
+            def_regularizers= {'l1':0,'l2':0}
+            i=0
             for key, vals in config.items():
+                i+=1
                 key_list= key.split('.')
                 print('key_list',key_list)
                 print('old vals',deep_get(params, key_list))
@@ -300,21 +305,36 @@ class IrtKerasRegressor():
                 #deep_set(params, key_list, vals,
                 #         accessor=lambda params, k: params.setdefault(k, dict()))
                 #params[key_list[0]][key_list[1]][key_list[2]]=vals
-                deep_set(params, key_list, vals)
+                if 'regularizers' in key_list:
+                    known= key_list.pop(-1)#l1 OR l2 
+                    #unknowns= {'l1':'l2','l2':'l1'}
+                    #temp[known]= vals
+                    def_regularizers.update({known:vals})
+                else:
+                    print('####key_list',key_list)
+                    deep_set(params, key_list, vals)
+                if i==len(config):#updates regularizer, once config is exhausted                        
+                    #vals= {known:vals, unknowns[known]:np.random.random(1)[0]}
+                    vals = def_regularizers
+                    deep_set(params, key_list, vals)#set l1 &l2 both at once
+                    print('####key_list for regularizers',key_list)
+                    print('####regularizers vals',vals)
                 print('existing params After:',params)
+                print('key_list at last deep set', key_list)
             print('existing params at end:',params)
             return params#OR self.proxy_model.update_params(params)
 
 
         def train_model(config, reporter):
             print('\nparams in train model func/config before:', config)
-            params= process_config(config)#{'guess_params':{'regularizers':{"l1":config["l1"], "l2":config["l2"]}}}
-            print('\nparams in train model func/config After:', params)
+            updated_params= process_config(config)#{'guess_params':{'regularizers':{"l1":config["l1"], "l2":config["l2"]}}}
+            #print('\nparams in train model func/config After:', updated_params)
             #config['guess_params']['regularizers'].update({'l1':config['l1'], 'l2':config['l2']})
-            #print('\nparams in train model func/config:', params)
+            #print('\nparams in train model func/config:', updated_params)
             
-            self.proxy_model.update_params(params)
-            updated_params= self.proxy_model.get_params()
+            #self.proxy_model.update_params(params)
+            #self.proxy_model.set_params(params)
+            print('\n###Updated params in train model func/config After:', updated_params)
             self.proxy_model.set_params(params=updated_params, set_by='optimizer')
             print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(
                 self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
@@ -355,7 +375,8 @@ class IrtKerasRegressor():
                 print("Creating model...")
                 params= process_config(best_trial.config)#{'guess_params':{'regularizers':best_trial.config}}
                 print('params at end:', params)
-                self.proxy_model.update_params(params)
+                #self.proxy_model.update_params(params)
+                self.proxy_model.set_params(params=params, set_by='optimizer')
                 print('params at end:',self.proxy_model.get_params())
 
                 #self.proxy_model.set_params(
@@ -372,6 +393,8 @@ class IrtKerasRegressor():
                 print("Loading failed. Trying next model")
         exe_time = time.time()-t1
         self.model = best_model
+        ray.shutdown()
+
 
         # Following lets user access each coeffs as and when required
         self.difficulty = self.coefficients()['difficulty_level']

@@ -166,8 +166,8 @@ class GeneralisedIrtModel(BaseModel):
                 deep_del(params_to_tap, [k, 'kernel_params'])
             if 'bias_param' in v.keys():
                 params_to_tap[k]['use_bias']= True#self._model_params[k]['use_bias']= True
-            if 'search_algo' not in v.keys():
-                params_to_tap[k].update({'search_algo': None})
+            #if 'search_algo' not in v.keys():
+            #    params_to_tap[k].update({'search_algo': None})
             #else:
              #   params_to_tap[k].update({'search_algo':self.params.get('search_algo')})
                 #{'search_algo': self.params.get('search_algo')})
