@@ -4,7 +4,7 @@ import logging
 import os
 import ray
 from ray import tune
-from ..optmizers import get_best_model
+from ..optmizers import get_best_model, get_opt_model
 from ..utils.functions import _parse_params
 import pickle
 import onnxmltools
@@ -80,153 +80,6 @@ class IrtKerasRegressor():
         self.proxy_model.primal = self.primal_model
         self.params = kwargs['params']
 
-#    def cross_fit(self, x_user, x_questions, y_vals, **kwargs):
-#        kwargs.setdefault('latent_traits', None)
-#        kwargs.setdefault('batch_size', 16)
-#        kwargs.setdefault('epochs', 64)
-#        kwargs.setdefault('validation_split', 0.2)
-#        kwargs.setdefault('params', self.params)
-#
-#        self.proxy_model.l_traits = kwargs['latent_traits']
-#
-#        self.proxy_model.x_train_user = x_user
-#        self.proxy_model.x_train_questions = x_questions
-#        self.proxy_model.y_ = y_vals
-#
-#        self.l_traits = kwargs['latent_traits']
-#        # affirming if params are given in either of(init or fit) methods
-#        self.params = self.params or kwargs['params']
-#        if self.params != None:  # Validate implementation with different types of tune input
-#            if not isinstance(self.params, dict):
-#                raise TypeError("Params should be of type 'dict'")
-#            
-#            #self.params.update({'search_algo': None} if 'search_algo' not in self.params.keys() else {'search_algo': self.params.get('search_algo')})
-#            
-#            self.params = _parse_params(self.params, return_as='flat')
-#            self.proxy_model.update_params(self.params)
-#            # triggers for fourPL model
-#            if self.proxy_model.name is 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
-#                if self.params['slip_params']['train']:
-#                    self.proxy_model.name = 'fourPL'
-#
-#        ray_verbose = False
-#        _ray_log_level = logging.INFO if ray_verbose else logging.ERROR
-#        ray.init(log_to_driver=False, logging_level=_ray_log_level, ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
-#                 num_cpus=4)
-#
-#        def train_model(config, reporter):
-#            params= {'guess_params':{'regularizers':{"l1":config["guess_params.l1"], "l2":config["guess_params.l1"]}}}
-#            print('\nparams in train model func/config before:', config)
-#            #config['guess_params']['regularizers'].update({'l1':config['l1'], 'l2':config['l2']})
-#            print('\nparams in train model func/config:', params)
-#            
-#            self.proxy_model.update_params(params)
-#            abc= self.proxy_model.get_params()
-#            self.proxy_model.set_params(params=abc, set_by='optimizer')
-#            print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(
-#                self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-#            model = self.proxy_model.create_model()
-#
-#            self.history = model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'],
-#                                     epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])
-#
-#            _, mae, accuracy = model.evaluate(
-#                x=[x_user, x_questions], y=y_vals)# [1]
-#            last_checkpoint = "weights_tune_{}.h5".format(
-#                list(zip(np.random.choice(10, len(config), replace=False), config)))
-#            model.save_weights(last_checkpoint)
-#            reporter(mean_error=mae, mean_accuracy=accuracy,
-#                     checkpoint=last_checkpoint)
-#        t1 = time.time()
-#        #configuration = tune.Experiment("experiment_name",
-#        #                                run=train_model,
-#        #                                resources_per_trial={"cpu": 4},
-#        #                                stop={"mean_error": 0.15,
-#        #                                      "mean_accuracy": 95},
-#        #                                config=self.proxy_model.get_params())
-#
-#        #space= deep_get(self.proxy_model.get_params(), ['guess_params', 'search_algo'])
-#        print('\nparams before tune run:', self.proxy_model.get_params())
-#        #print('\nspace:', space)
-#        algo= self.params['guess_params']['search_algo']['algo']
-#        sch= self.params['guess_params']['search_algo']['scheduler']
-#        cfg= self.params['guess_params']['search_algo']['config']
-#
-#
-#        trials= tune.run(train_model, name= "experiment_name",
-#                                        resources_per_trial={"cpu": 4},
-#                                        stop={"mean_error": 0.15,
-#                                              "mean_accuracy": 95},
-#                                        num_samples=4,
-#                                        scheduler=sch, search_alg= algo, config= cfg)#self.params['search_algo'])
-#
-#        #trials = tune.run_experiments(configuration, verbose=0)
-#        self.trials = trials
-#        #self.trial_dataframes =trials.trial_dataframes
-#
-#        metric = "mean_error"  # "mean_accuracy"
-#        # Restore a model from the best trial.
-#
-#        def get_sorted_trials(trial_list, metric):
-#            return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0), reverse=True)
-#
-#        sorted_trials = get_sorted_trials(trials, metric)
-#
-#        for best_trial in sorted_trials:
-#            try:
-#                print("Creating model...")
-#                params= {'guess_params':{'regularizers':best_trial.config}}
-#                self.proxy_model.update_params(params)
-#                
-#                #self.proxy_model.set_params(
-#                #    params=best_trial.config, set_by='optimizer')
-#                best_model = self.proxy_model.create_model()
-#                weights = os.path.join(
-#                    best_trial.logdir, best_trial.last_result["checkpoint"])
-#                print("Loading from", weights)
-#                # TODO Validate this loaded model.
-#                best_model.load_weights(weights)
-#                break
-#            except Exception as e:
-#                print(e)
-#                print("Loading failed. Trying next model")
-#        exe_time = time.time()-t1
-#        self.model = best_model
-#
-#        #self.model = model
-#        #print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-#        #model = self.proxy_model.create_model()
-#        #t1= time.time()
-#        # self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])#, callbacks= kwargs['callbacks'])#added callbacks
-#        #exe_time = time.time()-t1
-##
-#        #self.model = model
-#
-#        # Following lets user access each coeffs as and when required
-#        self.difficulty = self.coefficients()['difficulty_level']
-#        self.discrimination = self.coefficients()['disc_param']
-#        self.guessing = self.coefficients()['guessing_param']
-#        self.slip = self.coefficients()['slip_param']
-#
-#        num_trainables = np.sum([K.count_params(layer)
-#                                 for layer in self.model.trainable_weights])
-#        sample_size = y_vals.shape[0]
-#        log_lik, _, _ = self.model.evaluate(x=[x_user, x_questions], y=y_vals)
-#
-#        self.AIC = 2*num_trainables - 2*np.log(log_lik)
-#        self.AICc = self.AIC + (2*np.square(num_trainables) +
-#                                2*num_trainables)/(sample_size - num_trainables - 1)
-#
-#        print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(
-#            self.proxy_model.x_train_user.shape[0], kwargs['epochs'], np.round(exe_time, decimals=3)))
-#        print('\nAIC value: {} and AICc value: {}'.format(
-#            np.round(self.AIC, 3), np.round(self.AICc, 3)))
-#
-#        print('\nUse `object.plot()` to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--Question difficulty, discrimination, guessing & slip')
-#        print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
-#        return self
-######################################Proxy fit
-
     def fit(self, x_user, x_questions, y_vals, **kwargs):
         kwargs.setdefault('latent_traits', None)
         kwargs.setdefault('batch_size', 16)
@@ -246,128 +99,19 @@ class IrtKerasRegressor():
         if self.params != None:  # Validate implementation with different types of tune input
             if not isinstance(self.params, dict):
                 raise TypeError("Params should be of type 'dict'")
-            
-            #self.params.update({'search_algo': None} if 'search_algo' not in self.params.keys() else {'search_algo': self.params.get('search_algo')})
-            
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
             # triggers for fourPL model
             if self.proxy_model.name is 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
                 if self.params['slip_params']['train']:
                     self.proxy_model.name = 'fourPL'
-######################################NAS method
-    def nas(self, **kwargs):
-        kwargs.setdefault('nas_params', None)
-        nas_params= kwargs['nas_params']
-        
-        if not isinstance(nas_params, dict):
-            raise TypeError("nas_params should be of type 'dict'")
-        
-        space= nas_params['search_space'] #if 'search_space' in nas_params else {"guess_params.regularizers.l1": hp.uniform("bias_param", 0, 0.1),
-            #"guess_params.regularizers.l2": hp.uniform("guess_params.regularizers.l2", 0, 0.1)}
-        print('###space:', space)
 
-        def_dict={'search_methods':
-                    {
-                        'hyperOpt':{
-                            'algo':HyperOptSearch(space, reward_attr="mean_error", max_concurrent=4),
-                            'scheduler':AsyncHyperBandScheduler(reward_attr="mean_error"),
-                            'config':{}
-                                    }
-                    }
-                }
-        algo_name= nas_params['search_algo_name']
-        #print(algo_name)
-        params_= def_dict['search_methods'][algo_name]
-        #print(params_)
-        algo= params_['algo']
-        sch= params_['scheduler']
-        cfg= params_['config']
-
-        ray_verbose = False
-        _ray_log_level = logging.INFO if ray_verbose else logging.ERROR
-        ray.init(log_to_driver=False, logging_level=_ray_log_level, ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
-                 num_cpus=4)
-
-        def process_config(config):
-            i=0
-            params= copy.deepcopy(self.proxy_model.get_params())
-            reg_dict = defaultdict(lambda: {'l1':0,'l2':0})
-            for key, vals in config.items():
-                i+=1
-                key_list= key.split('.')
-                if 'regularizers' in key_list:
-                    known= key_list.pop(-1)#l1 OR l2
-                    reg_dict[tuple(key_list)].update({known:vals})#= def_regularizers#.update({known:vals})
-                    vals = reg_dict[tuple(key_list)]
-
-                #vals= {known:vals, unknowns[known]:0}#np.random.random(1)[0]}
-                print('\nconfig val {}:\n key_list: {};\n values: {}\n\n'.format(i, key_list, vals))
-                deep_set(params, key_list, vals)#set l1 &l2 both at once
-            return params#OR self.proxy_model.update_params(params)
-
-
-        def train_model(config, reporter):
-            print('\nparams in train model func/config before:', config)
-            updated_params= process_config(config)
-            print('\n###Updated params in train model func/config After:', updated_params)
-            self.proxy_model.set_params(params=updated_params, set_by='optimizer')
-            print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(
-                self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-            model = self.proxy_model.create_model()
-
-            self.history = model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'],
-                                     epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])
-
-            _, mae, accuracy = model.evaluate(
-                x=[x_user, x_questions], y=y_vals)# [1]
-            last_checkpoint = "weights_tune_{}.h5".format(
-                list(zip(np.random.choice(10, len(config), replace=False), config)))
-            model.save_weights(last_checkpoint)
-            reporter(mean_error=mae, mean_accuracy=accuracy,
-                     checkpoint=last_checkpoint)
-        t1 = time.time()
-
-        trials= tune.run(train_model, name= "{}_optimization".format(algo_name),
-                                        resources_per_trial={"cpu": 4},
-                                        stop={"mean_error": 0.15,
-                                              "mean_accuracy": 95},
-                                        num_samples=4,
-                                        scheduler=sch, search_alg= algo, config= cfg)#self.params['search_algo'])
-
-        self.trials = trials
-
-        metric = "mean_error"
-        # Restore a model from the best trial.
-
-        def get_sorted_trials(trial_list, metric):
-            return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0), reverse=True)
-
-        sorted_trials = get_sorted_trials(trials, metric)
-
-        for best_trial in sorted_trials:
-            try:
-                print("Creating model...")
-                params= process_config(best_trial.config)#{'guess_params':{'regularizers':best_trial.config}}
-                print('params at end:', params)
-                #self.proxy_model.update_params(params)
-                self.proxy_model.set_params(params=params, set_by='optimizer')
-                print('params at end:',self.proxy_model.get_params())
-
-                best_model = self.proxy_model.create_model()
-                weights = os.path.join(
-                    best_trial.logdir, best_trial.last_result["checkpoint"])
-                print("Loading from", weights)
-                # TODO Validate this loaded model.
-                best_model.load_weights(weights)
-                break
-            except Exception as e:
-                print(e)
-                print("Loading failed. Trying next model")
+        print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
+        model = self.proxy_model.create_model()
+        t1= time.time()
+        self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])#, callbacks= kwargs['callbacks'])#added callbacks
         exe_time = time.time()-t1
-        self.model = best_model
-        ray.shutdown()
-
+        self.model = model
 
         # Following lets user access each coeffs as and when required
         self.difficulty = self.coefficients()['difficulty_level']
@@ -392,10 +136,48 @@ class IrtKerasRegressor():
         print('\nUse `object.plot()` to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--Question difficulty, discrimination, guessing & slip')
         print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
         return self
+#
+    def nas(self, x_user, x_questions, y_vals, **kwargs):
+        kwargs.setdefault('params', self.params)
+        kwargs.setdefault('latent_traits', None)
+        kwargs.setdefault('nas_params', None)
+        kwargs.setdefault('num_samples', 4)
+        #nas_params= kwargs['nas_params']
+        
+        self.proxy_model.x_train_user = x_user
+        self.proxy_model.x_train_questions = x_questions
+        self.proxy_model.y_ = y_vals
+        self.proxy_model.l_traits = kwargs['latent_traits']
+        # affirming if params are given in either of(init or fit) methods
+        self.params = self.params or kwargs['params']
 
+        if not isinstance(kwargs['nas_params'], dict):
+            raise TypeError("nas_params should be of type 'dict'")
+        self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)
 
+        # Following lets user access each coeffs as and when required
+        self.difficulty = self.coefficients()['difficulty_level']
+        self.discrimination = self.coefficients()['disc_param']
+        self.guessing = self.coefficients()['guessing_param']
+        self.slip = self.coefficients()['slip_param']
 
+        num_trainables = np.sum([K.count_params(layer)
+                                 for layer in self.model.trainable_weights])
+        sample_size = y_vals.shape[0]
+        log_lik, _, _ = self.model.evaluate(x=[x_user, x_questions], y=y_vals)
 
+        self.AIC = 2*num_trainables - 2*np.log(log_lik)
+        self.AICc = self.AIC + (2*np.square(num_trainables) +
+                                2*num_trainables)/(sample_size - num_trainables - 1)
+
+        print('\nNeural Architecture Search on : {} samples over : {} trials has completed in : {} seconds.'.format(
+            self.proxy_model.x_train_user.shape[0], len(self.trials), np.round(exe_time, decimals=3)))
+        print('\nFor best model AIC value: {} and AICc value: {}'.format(
+            np.round(self.AIC, 3), np.round(self.AICc, 3)))
+
+        print('\nUse `object.coefficients()` to obtain model parameters--Question difficulty, discrimination, guessing & slip')
+        print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
+        return self
 
 
     def plot(self):
