@@ -151,9 +151,17 @@ class IrtKerasRegressor():
         # affirming if params are given in either of(init or fit) methods
         self.params = self.params or kwargs['params']
 
+        if self.params != None:  # Validate implementation with different types of tune input
+            if not isinstance(self.params, dict):
+                raise TypeError("Params should be of type 'dict'")
+            self.params = _parse_params(self.params, return_as='flat')
+            self.proxy_model.update_params(self.params)
+            # triggers for fourPL model
+
         if not isinstance(kwargs['nas_params'], dict):
             raise TypeError("nas_params should be of type 'dict'")
-        self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)
+        
+        self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)#adapt_obj= self
 
         # Following lets user access each coeffs as and when required
         self.difficulty = self.coefficients()['difficulty_level']
