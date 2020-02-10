@@ -1,3 +1,3 @@
-from .irt import (tpm, twoPl, rasch)
+from .irt import (fourPL, tpm, twoPl, rasch)
 
-__all__ = ['tpm','twoPl','rasch']
+__all__ = ['fourPL','tpm','twoPl','rasch']

@@ -358,3 +358,20 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         self.set_params(params=model_params, set_by='model_init')
+
+
+@registry.register
+class KerasIrt4PLModel(GeneralisedIrtModel):
+    def __init__(self):
+        self.adapter = IrtKerasRegressor
+        self.module_name = 'mlsquare'
+        self.name = 'fourPL'
+        self.version = 'default'
+        model_params = {'ability_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
+                        'diff_params': {'units': 1, 'kernel_params': {},'use_bias':False},
+                        'disc_params': {'units': 1, 'kernel_params': {}, 'train': True, 'act':'exponential', 'use_bias':False},
+                        'guess_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3, 'train': True, 'act': 'sigmoid', 'use_bias':True},
+                        'slip_params':{'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3.5, 'train': True, 'act': 'sigmoid', 'use_bias':True},
+                        'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
+
+        self.set_params(params=model_params, set_by='model_init')
