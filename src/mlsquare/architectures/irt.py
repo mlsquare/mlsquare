@@ -12,6 +12,7 @@ from keras import regularizers
 from keras import initializers
 from keras.layers import Activation
 from keras import metrics
+from hyperopt import hp
 from dict_deep import *
 #import copy
 
@@ -204,7 +205,8 @@ class GeneralisedIrtModel(BaseModel):
             #out_idx+=1
             #rint('\n\nouter dict count', out_idx)
 
-            if 'optimizer' not in vals.keys():
+            if key not in ['hyper_params', 'model_nas_params']:
+            #if 'optimizer' not in vals.keys():
                 params[key].update({'bias_param':sub_dict['bias_param'] if 'bias_param' not in vals.keys() else params[key]['bias_param']})# else params[key]['bias_param']})
                 params[key].update({'bias':keras.initializers.Constant(value=params[key]['bias_param'])})#sub_dict['bias_param'] if 'bias' not in vals.keys() else params[key]['bias'])})
                 if 'regularizers' not in vals.keys():#for initial call
@@ -357,6 +359,10 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
+        default_nas_config = {"guess_params.bias_param": hp.uniform("guess_params.bias_param", -5, -2),
+                            "slip_params.bias_param": hp.uniform("slip_params.bias_param", -5,-2)}#--if nas params should have separate set & get methods?
+        model_params.update({'model_nas_params':{'search_algo_name':'hyperOpt', 'search_space':default_nas_config}})
+
         self.set_params(params=model_params, set_by='model_init')
 
 
@@ -373,5 +379,8 @@ class KerasIrt4PLModel(GeneralisedIrtModel):
                         'guess_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3, 'train': True, 'act': 'sigmoid', 'use_bias':True},
                         'slip_params':{'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3.5, 'train': True, 'act': 'sigmoid', 'use_bias':True},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
+        default_nas_config = {"guess_params.bias_param": hp.uniform("guess_params.bias_param", -5, -2),
+                            "slip_params.bias_param": hp.uniform("slip_params.bias_param", -5,-2)}#--if nas params should have separate set & get methods?
+        model_params.update({'model_nas_params':{'search_algo_name':'hyperOpt', 'search_space':default_nas_config}})
 
         self.set_params(params=model_params, set_by='model_init')

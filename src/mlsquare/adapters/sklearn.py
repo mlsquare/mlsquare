@@ -86,6 +86,8 @@ class IrtKerasRegressor():
         kwargs.setdefault('epochs', 64)
         kwargs.setdefault('validation_split', 0.2)
         kwargs.setdefault('params', self.params)
+        kwargs.setdefault('nas_params', None)
+        kwargs.setdefault('num_samples', 4)
 
         self.proxy_model.l_traits = kwargs['latent_traits']
 
@@ -107,11 +109,13 @@ class IrtKerasRegressor():
                     self.proxy_model.name = 'fourPL'
 
         print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-        model = self.proxy_model.create_model()
-        t1= time.time()
-        self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])#, callbacks= kwargs['callbacks'])#added callbacks
-        exe_time = time.time()-t1
-        self.model = model
+        
+        self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)
+        #model = self.proxy_model.create_model()
+        #t1= time.time()
+        #self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])#, callbacks= kwargs['callbacks'])#added callbacks
+        #exe_time = time.time()-t1
+        #self.model = model
 
         # Following lets user access each coeffs as and when required
         self.difficulty = self.coefficients()['difficulty_level']
