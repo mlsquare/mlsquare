@@ -81,22 +81,21 @@ def get_opt_model(x_user, x_questions, y_vals, proxy_model, **kwargs):
             model = proxy_model.create_model()
             history = model.fit(x=[x_user, x_questions], y=y_vals, batch_size=dict_['batch_size'],
                                      epochs=dict_['epochs'], verbose=0, validation_split=dict_['validation_split'])
-            _, mae, accuracy = model.evaluate(x=[x_user, x_questions], y=y_vals)
+            loss, mae, accuracy = model.evaluate(x=[x_user, x_questions], y=y_vals)
             last_checkpoint="weights_tune_{}.h5".format(list(zip(np.random.choice(10, len(config), replace=False), config)))
             model.save_weights(last_checkpoint)
-            reporter(mean_error=mae, mean_accuracy=accuracy,
+            reporter(mean_error=loss, mean_accuracy=accuracy,
                      checkpoint=last_checkpoint)
 
         t1 = time.time()
         trials= tune.run(train_model, name= "{}_optimization".format(dict_['search_algo_name']),
                                         resources_per_trial={"cpu": 4},
-                                        stop={"mean_error": 0.15,
-                                              "mean_accuracy": 95},
+                                        stop={"mean_error": 0},
                                         num_samples=dict_['num_samples'],
                                         scheduler=dict_['sch'], search_alg= dict_['algo'], config= dict_['cfg'])
 
         def get_sorted_trials(trial_list, metric):
-            return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0), reverse=True)
+            return sorted(trial_list, key=lambda trial: trial.last_result.get(metric, 0))
 
         metric = "mean_error"
         sorted_trials = get_sorted_trials(trials, metric)
