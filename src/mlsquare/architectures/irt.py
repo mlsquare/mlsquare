@@ -88,6 +88,9 @@ class GeneralisedIrtModel(BaseModel):
                                      kernel_regularizer=l1_l2(
                                         l1=model_params['disc_params']['regularizers']['l1'],
                                         l2=model_params['disc_params']['regularizers']['l2']),
+                                    #activity_regularizer=l1_l2(
+                                    #    l1=model_params['disc_params']['regularizers']['l1'],
+                                    #   l2=model_params['disc_params']['regularizers']['l2']),
                                      trainable=model_params['disc_params']['train'],
                                      activation=model_params['disc_params']['act'],
                                      name='disc_param')(quest_input_layer)
@@ -107,7 +110,10 @@ class GeneralisedIrtModel(BaseModel):
         guess_param = Dense(model_params['guess_params']['units'], use_bias=model_params['guess_params']['use_bias'],
                             kernel_initializer=model_params['guess_params']['kernel'],
                             bias_initializer=model_params['guess_params']['bias'],
-                            kernel_regularizer=l1_l2(
+                            #kernel_regularizer=l1_l2(
+                            #    l1=model_params['guess_params']['regularizers']['l1'],
+                            #    l2=model_params['guess_params']['regularizers']['l2']),
+                            activity_regularizer=l1_l2(
                                 l1=model_params['guess_params']['regularizers']['l1'],
                                 l2=model_params['guess_params']['regularizers']['l2']),
                             trainable=model_params['guess_params']['train'],
@@ -116,7 +122,10 @@ class GeneralisedIrtModel(BaseModel):
         slip_param= Dense(model_params['slip_params']['units'], use_bias=model_params['slip_params']['use_bias'],
                             kernel_initializer=model_params['slip_params']['kernel'],
                             bias_initializer=model_params['slip_params']['bias'],
-                            kernel_regularizer=l1_l2(
+                            #kernel_regularizer=l1_l2(
+                            #    l1=model_params['slip_params']['regularizers']['l1'],
+                            #    l2=model_params['slip_params']['regularizers']['l2']),
+                            activity_regularizer=l1_l2(
                                 l1=model_params['slip_params']['regularizers']['l1'],
                                 l2=model_params['slip_params']['regularizers']['l2']),
                             trainable=model_params['slip_params']['train'],
