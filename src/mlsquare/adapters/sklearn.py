@@ -266,8 +266,10 @@ class IrtKerasRegressor():
             if layer.name in ['latent_trait/ability', 'difficulty_level', 'disc_param', 'guessing_param', 'slip_param']:
                 rel_layers_idx.append(idx)
 
-        coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[
-            0] for idx in rel_layers_idx}
+        wt_plus_bias= lambda x: x[0]+ x[1]#For layers employing bias values
+        coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[0] 
+            if self.model.layers[idx].bias is None else wt_plus_bias(self.model.layers[idx].get_weights()) 
+            for idx in rel_layers_idx}
         t_4PL = {'tpm': ['guessing_param'], 'fourPL': [
             'guessing_param', 'slip_param']}
         if self.proxy_model.name in t_4PL.keys():  # reporting guess & slip
