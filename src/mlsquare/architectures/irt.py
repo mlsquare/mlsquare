@@ -72,6 +72,9 @@ class GeneralisedIrtModel(BaseModel):
                                  kernel_regularizer=l1_l2(
                                         l1=model_params['ability_params']['regularizers']['l1'],
                                         l2=model_params['ability_params']['regularizers']['l2']),
+                                 activity_regularizer=l1_l2(
+                                        l1=model_params['ability_params']['group_lasso']['l1'],
+                                        l2=model_params['ability_params']['group_lasso']['l2']),
                                  name='latent_trait/ability')(user_input_layer)
 
         difficulty_level = Dense(model_params['diff_params']['units'], use_bias=model_params['diff_params']['use_bias'],
@@ -80,6 +83,9 @@ class GeneralisedIrtModel(BaseModel):
                                  kernel_regularizer=l1_l2(
                                         l1=model_params['diff_params']['regularizers']['l1'],
                                         l2=model_params['diff_params']['regularizers']['l2']),
+                                 activity_regularizer=l1_l2(
+                                        l1=model_params['diff_params']['group_lasso']['l1'],
+                                        l2=model_params['diff_params']['group_lasso']['l2']),
                                  name='difficulty_level')(quest_input_layer)
 
         discrimination_param = Dense(model_params['disc_params']['units'], use_bias=model_params['disc_params']['use_bias'],
@@ -88,12 +94,14 @@ class GeneralisedIrtModel(BaseModel):
                                      kernel_regularizer=l1_l2(
                                         l1=model_params['disc_params']['regularizers']['l1'],
                                         l2=model_params['disc_params']['regularizers']['l2']),
-                                    #activity_regularizer=l1_l2(
-                                    #    l1=model_params['disc_params']['regularizers']['l1'],
-                                    #   l2=model_params['disc_params']['regularizers']['l2']),
+                                     activity_regularizer=l1_l2(
+                                        l1=model_params['disc_params']['group_lasso']['l1'],
+                                        l2=model_params['disc_params']['group_lasso']['l2']),
                                      trainable=model_params['disc_params']['train'],
-                                     activation=model_params['disc_params']['act'],
+                                     #activation= model_params['disc_params']['act'],
                                      name='disc_param')(quest_input_layer)
+
+        discrimination_param = Activation(model_params['disc_params']['act'], name= 'disc_activation')(discrimination_param)
 
         disc_latent_interaction = keras.layers.Multiply(
             name='lambda_latent_inter.')([discrimination_param, latent_trait])
@@ -110,24 +118,24 @@ class GeneralisedIrtModel(BaseModel):
         guess_param = Dense(model_params['guess_params']['units'], use_bias=model_params['guess_params']['use_bias'],
                             kernel_initializer=model_params['guess_params']['kernel'],
                             bias_initializer=model_params['guess_params']['bias'],
-                            #kernel_regularizer=l1_l2(
-                            #    l1=model_params['guess_params']['regularizers']['l1'],
-                            #    l2=model_params['guess_params']['regularizers']['l2']),
-                            activity_regularizer=l1_l2(
+                            kernel_regularizer=l1_l2(
                                 l1=model_params['guess_params']['regularizers']['l1'],
                                 l2=model_params['guess_params']['regularizers']['l2']),
+                            activity_regularizer=l1_l2(
+                                l1=model_params['guess_params']['group_lasso']['l1'],
+                                l2=model_params['guess_params']['group_lasso']['l2']),
                             trainable=model_params['guess_params']['train'],
                             activation=model_params['guess_params']['act'], name='guessing_param')(quest_input_layer)
 
         slip_param= Dense(model_params['slip_params']['units'], use_bias=model_params['slip_params']['use_bias'],
                             kernel_initializer=model_params['slip_params']['kernel'],
                             bias_initializer=model_params['slip_params']['bias'],
-                            #kernel_regularizer=l1_l2(
-                            #    l1=model_params['slip_params']['regularizers']['l1'],
-                            #    l2=model_params['slip_params']['regularizers']['l2']),
-                            activity_regularizer=l1_l2(
+                            kernel_regularizer=l1_l2(
                                 l1=model_params['slip_params']['regularizers']['l1'],
                                 l2=model_params['slip_params']['regularizers']['l2']),
+                            activity_regularizer=l1_l2(
+                                l1=model_params['slip_params']['group_lasso']['l1'],
+                                l2=model_params['slip_params']['group_lasso']['l2']),
                             trainable=model_params['slip_params']['train'],
                             activation=model_params['slip_params']['act'], name='slip_param')(quest_input_layer)
 
@@ -198,7 +206,7 @@ class GeneralisedIrtModel(BaseModel):
 
     def get_initializers(self, params):
         #params_cp= params.copy()
-        default_params = {'bias_param':0,  'reg': {'l1': 0, 'l2': 0}}
+        default_params = {'bias_param':0,  'reg': {'l1': 0, 'l2': 0}, 'group_l': {'l1': 0, 'l2': 0}}
         backends_li = ['keras', 'pytorch']
         dist_dict = {'normal': {'mean': 0, 'stddev': 1},
                      'uniform': {'minval': 0, 'maxval': 0}}
@@ -220,6 +228,8 @@ class GeneralisedIrtModel(BaseModel):
                 params[key].update({'bias':keras.initializers.Constant(value=params[key]['bias_param'])})#sub_dict['bias_param'] if 'bias' not in vals.keys() else params[key]['bias'])})
                 if 'regularizers' not in vals.keys():#for initial call
                     params[key].update({'regularizers':sub_dict['reg']})#add default regularization
+                if 'group_lasso' not in vals.keys():
+                    params[key].update({'group_lasso':sub_dict['group_l']})#add default regularization
                 #else:
                  #   deep_get(params, [key,])
                  #   params[key]

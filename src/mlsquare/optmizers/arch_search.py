@@ -68,6 +68,10 @@ def get_opt_model(x_user, x_questions, y_vals, proxy_model, **kwargs):
                     known= key_list.pop(-1)#l1 OR l2
                     reg_dict[tuple(key_list)].update({known:vals})
                     vals = reg_dict[tuple(key_list)]
+                if 'group_lasso' in key_list:
+                    known= key_list.pop(-1)#l1 OR l2
+                    reg_dict[tuple(key_list)].update({known:vals})
+                    vals = reg_dict[tuple(key_list)]
                 print('\nconfig val {}:\n key_list: {};\n values: {}\n\n'.format(i, key_list, vals))
                 deep_set(config_params, key_list, vals)#set l1 &l2 both at once
             return config_params#OR self.proxy_model.update_params(params)
@@ -82,6 +86,13 @@ def get_opt_model(x_user, x_questions, y_vals, proxy_model, **kwargs):
             history = model.fit(x=[x_user, x_questions], y=y_vals, batch_size=dict_['batch_size'],
                                      epochs=dict_['epochs'], verbose=0, validation_split=dict_['validation_split'])
             loss, mae, accuracy = model.evaluate(x=[x_user, x_questions], y=y_vals)
+            #los_li = []
+            #for l in model.losses:
+            #    #print(l)
+            #    if l!=0:
+            #        los_li.append(K.eval(l))
+            #los_li= sum(los_li)
+            #print('\nReported total loss: {} and cumulative regualrizer+ network loss:{}'.format(loss,los_li))
             last_checkpoint="weights_tune_{}.h5".format(list(zip(np.random.choice(10, len(config), replace=False), config)))
             model.save_weights(last_checkpoint)
             reporter(mean_error=loss, mean_accuracy=accuracy,
@@ -110,6 +121,15 @@ def get_opt_model(x_user, x_questions, y_vals, proxy_model, **kwargs):
                     best_trial.logdir, best_trial.last_result["checkpoint"])
                 print("Loading from", weights)
                 best_model.load_weights(weights)
+
+                #loss, mae, accuracy = best_model.evaluate(x=[x_user, x_questions], y=y_vals)
+                #los_li = []
+                #for l in best_model.losses:
+                #    #print(l)
+                #    if l!=0:
+                #        los_li.append(K.eval(l))
+                #los_li= sum(los_li)
+                #print('\nFinal Reported total loss: {} and cumulative regualrizer+ network loss:{}'.format(loss,los_li))
                 break
             except Exception as e:
                 print(e)
