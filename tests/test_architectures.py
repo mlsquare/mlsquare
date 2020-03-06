@@ -21,7 +21,7 @@ from mlsquare.models.embibe import rasch
 def _load_irt_data():
     col_name = ['question_code', 'user_id', 'difficulty', 'ability', 'response']
     X,y =_load_simIrt()
-    xtrain, xtest, ytrain, ytest= train_test_split(X, y, test_size=0.3, random_state=0)
+    xtrain, xtest, ytrain, ytest= train_test_split(X, y, test_size=0.5, random_state=0)
     x_train_u= xtrain[[col_name[1]]]
     x_train_q= xtrain[[col_name[0]]]
     y_train = ytrain
@@ -225,15 +225,25 @@ def test_svd_sigma_vals():
     assert p_value > 1e-01
 
 @pytest.mark.xfail()
-def test_irt_ability_dist():
-    _ , _, pval = _run_irt_ttest(rasch, 200)
-    assert pval>0.05
+def test_irt_ability_dist_prediction_abilities():
+    pval_abl, pval_pred, pval = _run_irt_ttest(rasch, 300)
+    #_ , _, pval = _run_irt_ttest(rasch, 600)
+    dist_flag= pval>0.05
+    pred_flag= pval_pred<0.1
+    abl_comp_flag= pval_abl<0.1
+    flag_msg_di = dict(zip(['dist_flag', 'pred_flag', 'abl_comp_flag'], [
+        'Abilities are NOT distributed normally.',
+        'True Vs. Estimated predictions differ.', 
+        'True Vs. Estimated abilities differ.']))
+    for flag, message in flag_msg_di.items():
+        assert eval(flag), message
+    #assert pval>0.05, "abilities are NOT distributed normally."
 
-@pytest.mark.xfail()
-def test_irt_prediction_abilities():
-    pval_abl, pval_pred, _ = _run_irt_ttest(rasch, 200)
-    assert pval_pred<0.1
-    assert pval_abl<0.1
+#@pytest.mark.xfail()
+#def test_irt_prediction_abilities():
+#    pval_abl, pval_pred, _ = _run_irt_ttest(rasch, 600)
+#    assert pval_pred<0.1
+#    assert pval_abl<0.1
 
 @pytest.mark.xfail()
 def test_linear_regression_ttest():
