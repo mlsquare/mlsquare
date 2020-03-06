@@ -340,6 +340,11 @@ class KerasIrt1PLModel(GeneralisedIrtModel):
                         'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
+
+        default_nas_config={"diff_params.kernel_params.stddev": hp.uniform("diff_params.kernel_params.stddev", 0.4, 1.5),
+                            "ability_params.kernel_params.stddev": hp.uniform("ability_params.kernel_params.stddev", 0.4, 1.5)
+                            }
+        model_params.update({'model_nas_params':{'search_algo_name':'hyperOpt', 'search_space':default_nas_config}})
         self.set_params(params=model_params, set_by='model_init')
 
 
@@ -360,6 +365,11 @@ class KerasIrt2PLModel(GeneralisedIrtModel):
                         #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
+        default_nas_config={"diff_params.kernel_params.stddev": hp.uniform("diff_params.kernel_params.stddev", 0.4, 1.5),
+                            "ability_params.kernel_params.stddev": hp.uniform("ability_params.kernel_params.stddev", 0.4, 1.5),
+                            "disc_params.kernel_params.stddev": hp.uniform("disc_params.kernel_params.stddev", 0.4, 1.5)
+                            }
+        model_params.update({'model_nas_params':{'search_algo_name':'hyperOpt', 'search_space':default_nas_config}})
         self.set_params(params=model_params, set_by='model_init')
 
 

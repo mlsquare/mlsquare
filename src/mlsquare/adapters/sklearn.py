@@ -268,7 +268,7 @@ class IrtKerasRegressor():
 
         wt_plus_bias= lambda x: x[0]+ x[1]#For layers employing bias values
         coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[0] 
-            if self.model.layers[idx].bias is None else wt_plus_bias(self.model.layers[idx].get_weights()) 
+            if self.model.layers[idx].bias is None else wt_plus_bias(self.model.layers[idx].get_weights())
             for idx in rel_layers_idx}
         t_4PL = {'tpm': ['guessing_param'], 'fourPL': [
             'guessing_param', 'slip_param']}
@@ -294,6 +294,17 @@ class IrtKerasRegressor():
                 self.proxy_model.x_train_user.shape[1], self.proxy_model.x_train_questions.shape[1]))
         pred = self.model.predict([x_user, x_questions])
         return pred
+
+    def save(self, filename=None):
+        if filename == None:
+            raise ValueError(
+                'Name Error: to save the model you need to specify the filename')
+        pickle.dump(self.model, open(filename + '.pkl', 'wb'))
+
+        self.model.save(filename + '.h5')
+
+        onnx_model = onnxmltools.convert_keras(self.model)
+        onnxmltools.utils.save_model(onnx_model, filename + '.onnx')
 
 
 class SklearnTfTransformer():
