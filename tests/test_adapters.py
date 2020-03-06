@@ -2,12 +2,83 @@ import keras
 # import onnxruntime
 import pytest
 import numpy as np
+from hyperopt import hp
 from scipy import stats
 
+from mlsquare.models.embibe import rasch
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
 from mlsquare import registry
-from test_architectures import _load_classification_data, _load_regression_data
+from test_architectures import _load_classification_data, _load_regression_data, _load_irt_data
+
+def test_irt_Keras_regressor_basic_functionality():
+    primal_model = rasch()
+    proxy_model, mock_adapt = registry[('mlsquare', 'rasch')]['default']
+    model = mock_adapt(proxy_model, primal_model)
+    assert hasattr(model, 'fit') == True
+    assert hasattr(model, 'coefficients') == True
+    assert hasattr(model, 'predict') == True
+    assert hasattr(model, 'save') == True
+
+def test_irt_Keras_regressor_with_illformat_nas_params():
+    primal_model = rasch()
+    proxy_model, mock_adapt = registry[('mlsquare', 'rasch')]['default']
+    model = mock_adapt(proxy_model, primal_model)
+    
+    di_error_config= {'ss_config1': (ValueError,[{
+    "diff_params.kernel_params.mean": hp.uniform("diff_params.kernel_params.mean", -0.5,0.5)}]),
+          'ss_config2': (TypeError, {
+    "diff_params.kernel_params.mean": hp.uniform("diff_params.kernel_params.mean", [-0.5,0.5])}),
+          'ss_config3': [BaseException, {
+    "diff_params.kernel_params": hp.uniform("diff_params.kernel_params", -0.5,0.5)}],
+         'ss_config4': [IndexError, {}]  
+          }
+    di_error_msg= {ValueError: "Ill-format Search Space is passed/accepeted in nas_params",
+    TypeError:"Boundary values in wrong format are passed/accepted in nas_params",
+    BaseException: "Search keys given in wrong format are passed/accepted in nas_params",
+    IndexError:"An empty Search Space is passed/accepted in nas_params"
+    }
+    x_train_u, x_train_q, y_train, _, _, _, _= _load_irt_data()
+    for k, v in di_error_config.items():
+        with pytest.raises(v[0]) as di_error_msg[v[0]]:
+            nas_params= {'search_algo_name':'hyperOpt', 'search_space':v[1], 'union':False}
+            model.fit(x_user= x_train_u, x_questions= x_train_q, y_vals= y_train, batch_size= 64, epochs=1, nas_params= nas_params)
+
+@pytest.mark.xfail
+def test_irtkeras_regressor_with_nas_params():
+    primal_model = rasch()
+    proxy_model, mock_adapt = registry[('mlsquare', 'rasch')]['default']
+    model = mock_adapt(proxy_model, primal_model)
+    src_space= {
+    "diff_params.kernel_params.mean": hp.uniform("diff_params.kernel_params.mean", 0.1,0.3)}
+    nas_params= {'search_algo_name':'hyperOpt', 'search_space':src_space, 'union':False}
+    x_train_u, x_train_q, y_train, _, _, _, _= _load_irt_data()
+    model.fit(x_user= x_train_u, x_questions= x_train_q, y_vals= y_train, batch_size= 64, epochs=3, nas_params= nas_params)
+    di = {lay.name:i for i, lay in enumerate(model.model.layers)}
+    diff_mean = model.model.layers[di['difficulty_level']].kernel_initializer.mean
+    assert diff_mean!=0, "Mean value isn't optimized, NAS did NOT traverse externel nas_params"
+    for lay in ['difficulty_level', 'latent_trait/ability']:
+        lay_stddev = model.model.layers[di[lay]].kernel_initializer.stddev
+        assert lay_stddev==1, "Stddev value is also optimized, NAS(union=False) did NOT OVERRIDE default model_nas_params"
+    assert isinstance(model.model, keras.engine.training.Model)
+
+@pytest.mark.xfail
+def test_irtkeras_regressor_with_nas_params_union():
+    primal_model = rasch()
+    proxy_model, mock_adapt = registry[('mlsquare', 'rasch')]['default']
+    model = mock_adapt(proxy_model, primal_model)
+    src_space= {
+    "diff_params.kernel_params.mean": hp.uniform("diff_params.kernel_params.mean", 0.1,0.3)}
+    nas_params= {'search_algo_name':'hyperOpt', 'search_space':src_space}
+    x_train_u, x_train_q, y_train, _, _, _, _= _load_irt_data()
+    model.fit(x_user= x_train_u, x_questions= x_train_q, y_vals= y_train, batch_size= 64, epochs=3, nas_params= nas_params)
+    di = {lay.name:i for i, lay in enumerate(model.model.layers)}
+    diff_mean = model.model.layers[di['difficulty_level']].kernel_initializer.mean
+    assert diff_mean!=0, "Mean value isn't optimized, NAS did NOT traverse externel nas_params"
+    for lay in ['difficulty_level', 'latent_trait/ability']:
+        lay_stddev = model.model.layers[di[lay]].kernel_initializer.stddev
+        assert lay_stddev!=1, "Stddev value isn't optimized, NAS did NOT traverse default model_nas_params"
+    assert isinstance(model.model, keras.engine.training.Model)
 
 def _run_adapter(dataset_loader, proxy_model, mock_adapt, primal_model):
     x_train, x_test, y_train, y_test = dataset_loader()
