@@ -5,11 +5,11 @@ import numpy as np
 from hyperopt import hp
 from scipy import stats
 
-from mlsquare.models.embibe import rasch
+from mlsquare.models.embibe import rasch, fourPL
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
 from mlsquare import registry
-from test_architectures import _load_classification_data, _load_regression_data, _load_irt_data
+from test_architectures import _load_classification_data, _load_regression_data, _load_1PL_IrtData#_load_irt_data
 
 def test_irt_Keras_regressor_basic_functionality():
     primal_model = rasch()
@@ -43,6 +43,30 @@ def test_irt_Keras_regressor_with_illformat_nas_params():
         with pytest.raises(v[0]) as di_error_msg[v[0]]:
             nas_params= {'search_algo_name':'hyperOpt', 'search_space':v[1], 'union':False}
             model.fit(x_user= x_train_u, x_questions= x_train_q, y_vals= y_train, batch_size= 64, epochs=1, nas_params= nas_params)
+
+@pytest.mark.xfail
+def test_irt_keras_nas_regularizers():
+    primal_model = fourPL()
+    proxy_model, mock_adapt = registry[('mlsquare', 'fourPL')]['default']
+    model = mock_adapt(proxy_model, primal_model)
+    layer_nas_keys = dict(zip(['difficulty_level', 'disc_param', 'guessing_param',
+    'slip_param'], ["diff_params.group_lasso.l1", "disc_params.group_lasso.l1",
+    "guess_params.group_lasso.l1", "slip_params.group_lasso.l1"]))
+
+    layer_names= np.random.choice(list(layer_nas_keys.keys()),2, replace=False)
+    src_space= {
+    layer_nas_keys[vals]: hp.uniform(layer_nas_keys[vals], 0, 10) for vals in layer_names}
+    nas_params= {'search_algo_name':'hyperOpt', 'search_space':src_space, 'union':False}
+    xtrain, y_train, x_train_user, x_train_questions=_load_1PL_IrtData(size=0.9)
+    model.fit(x_user= x_train_user, x_questions= x_train_questions, y_vals= y_train, batch_size= 128, epochs=5, nas_params=nas_params)
+    for lay in model.model.layers:
+        if lay.name in layer_names:
+            coefs= model.coefficients()[lay.name]
+            true_params = np.zeros(coefs.shape) if lay.name!= 'disc_param' else np.ones(coefs.shape)
+            _, pval= stats.ttest_rel(coefs, true_params)
+            assert lay.activity_regularizer.l1!=0, "NAS didn't work, Activity regularizer is not updated"
+            assert pval < 0.2, "group lasso did NOT work as expected, Try again adjusting l1/l2 bounds in NAS search space."
+
 
 @pytest.mark.xfail
 def test_irtkeras_regressor_with_nas_params():

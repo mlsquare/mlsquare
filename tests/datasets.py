@@ -11,12 +11,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
-def _load_1PL_IrtData():
+def _load_1PL_IrtData(size=0.99):
     data = pd.read_csv('./datasets/sim_irt_100_by_100.csv')
 
     df_new = data[['question_code', 'user_id', 'correctness']]
     df_cols = df_new.columns
-    xtrain, xtest, ytrain, ytest = train_test_split(df_new[df_cols[:-1]], df_new[df_cols[-1]], test_size=0.99)
+    xtrain, xtest, ytrain, ytest = train_test_split(df_new[df_cols[:-1]], df_new[df_cols[-1]], test_size=size)
     x_train_user = pd.get_dummies(xtrain['user_id']).values
     x_train_questions = pd.get_dummies(xtrain['question_code']).values
     y_train= ytrain.values
