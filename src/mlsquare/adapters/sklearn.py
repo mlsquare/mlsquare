@@ -111,11 +111,6 @@ class IrtKerasRegressor():
         print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
         
         self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)
-        #model = self.proxy_model.create_model()
-        #t1= time.time()
-        #self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])#, callbacks= kwargs['callbacks'])#added callbacks
-        #exe_time = time.time()-t1
-        #self.model = model
 
         # Following lets user access each coeffs as and when required
         self.difficulty = self.coefficients()['difficulty_level']
@@ -141,76 +136,16 @@ class IrtKerasRegressor():
         print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
         return self
 
-###################################
-    def fit_original(self, x_user, x_questions, y_vals, **kwargs):
-        kwargs.setdefault('latent_traits', None)
-        kwargs.setdefault('batch_size', 16)
-        kwargs.setdefault('epochs', 64)
-        kwargs.setdefault('validation_split', 0.2)
-        kwargs.setdefault('params', self.params)
-
-        self.proxy_model.l_traits = kwargs['latent_traits']
-
-        self.proxy_model.x_train_user = x_user
-        self.proxy_model.x_train_questions = x_questions
-        self.proxy_model.y_ = y_vals
-
-        self.l_traits = kwargs['latent_traits']
-        # affirming if params are given in either of(init or fit) methods
-        self.params = self.params or kwargs['params']
-        if self.params != None:  # Validate implementation with different types of tune input
-            if not isinstance(self.params, dict):
-                raise TypeError("Params should be of type 'dict'")
-            self.params = _parse_params(self.params, return_as='flat')
-            self.proxy_model.update_params(self.params)
-            # triggers for fourPL model
-            if self.proxy_model.name is 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
-                if self.params['slip_params']['train']:
-                    self.proxy_model.name = 'fourPL'
-
-        print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-        model = self.proxy_model.create_model()
-        t1= time.time()
-        self.history= model.fit(x=[x_user, x_questions], y=y_vals, batch_size=kwargs['batch_size'], epochs=kwargs['epochs'], verbose=0, validation_split=kwargs['validation_split'])#, callbacks= kwargs['callbacks'])#added callbacks
-        exe_time = time.time()-t1
-        self.model = model
-
-        # Following lets user access each coeffs as and when required
-        self.difficulty = self.coefficients()['difficulty_level']
-        self.discrimination = self.coefficients()['disc_param']
-        self.guessing = self.coefficients()['guessing_param']
-        self.slip = self.coefficients()['slip_param']
-
-        num_trainables = np.sum([K.count_params(layer)
-                                 for layer in self.model.trainable_weights])
-        sample_size = y_vals.shape[0]
-        log_lik, _, _ = self.model.evaluate(x=[x_user, x_questions], y=y_vals)
-
-        self.AIC = 2*num_trainables - 2*np.log(log_lik)
-        self.AICc = self.AIC + (2*np.square(num_trainables) +
-                                2*num_trainables)/(sample_size - num_trainables - 1)
-
-        print('\nTraining on : {} samples for : {} epochs has completed in : {} seconds.'.format(
-            self.proxy_model.x_train_user.shape[0], kwargs['epochs'], np.round(exe_time, decimals=3)))
-        print('\nAIC value: {} and AICc value: {}'.format(
-            np.round(self.AIC, 3), np.round(self.AICc, 3)))
-
-        print('\nUse `object.plot()` to view train/validation loss curves;\nUse `object.history` to obtain train/validation loss across all the epochs.\nUse `object.coefficients()` to obtain model parameters--Question difficulty, discrimination, guessing & slip')
-        print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
-        return self
-#
     def nas(self, x_user, x_questions, y_vals, **kwargs):
         kwargs.setdefault('params', self.params)
         kwargs.setdefault('latent_traits', None)
         kwargs.setdefault('nas_params', None)
         kwargs.setdefault('num_samples', 4)
-        #nas_params= kwargs['nas_params']
         
         self.proxy_model.x_train_user = x_user
         self.proxy_model.x_train_questions = x_questions
         self.proxy_model.y_ = y_vals
         self.proxy_model.l_traits = kwargs['latent_traits']
-        # affirming if params are given in either of(init or fit) methods
         self.params = self.params or kwargs['params']
 
         if self.params != None:  # Validate implementation with different types of tune input
@@ -220,9 +155,6 @@ class IrtKerasRegressor():
             self.proxy_model.update_params(self.params)
             # triggers for fourPL model
 
-        #if not isinstance(kwargs['nas_params'], dict):
-        #    raise TypeError("nas_params should be of type 'dict'")
-        
         self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)#adapt_obj= self
 
         # Following lets user access each coeffs as and when required
@@ -248,7 +180,6 @@ class IrtKerasRegressor():
         print('\nUse `object.coefficients()` to obtain model parameters--Question difficulty, discrimination, guessing & slip')
         print('Use `object.AIC` & `object.AIC` to obtain Akaike Information Criterion(AIC & AICc) values.')
         return self
-
 
     def plot(self):
         plt.plot(self.history.history['loss'])
@@ -278,11 +209,6 @@ class IrtKerasRegressor():
                     {layer: np.exp(coef[layer])/(1 + np.exp(coef[layer]))})
 
         coef.update({'disc_param': np.exp(coef['disc_param'])})
-        # if not self.proxy_model.name=='tpm':#for 1PL & 2PL
-        #    coef.update({'disc_param':np.exp(coef['disc_param'])})
-        # else:
-        #    coef.update({'guessing_param':np.exp(coef['guessing_param'])/(1+ np.exp(coef['guessing_param']))})
-        #    coef.update({'disc_param':np.exp(coef['disc_param'])})
         return coef
 
     def predict(self, x_user, x_questions):

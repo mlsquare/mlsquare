@@ -183,12 +183,7 @@ class GeneralisedIrtModel(BaseModel):
             if 'kernel' in v and 'kernel_params' not in v:
                 deep_del(params_to_tap, [k, 'kernel_params'])
             if 'bias_param' in v.keys():
-                params_to_tap[k]['use_bias']= True#self._model_params[k]['use_bias']= True
-            #if 'search_algo' not in v.keys():
-            #    params_to_tap[k].update({'search_algo': None})
-            #else:
-             #   params_to_tap[k].update({'search_algo':self.params.get('search_algo')})
-                #{'search_algo': self.params.get('search_algo')})
+                params_to_tap[k]['use_bias']= True
             for key, val in v.items():
                 list_path = [k, key]
                 deep_set(params_to_tap, list_path, deep_get(params, list_path),
@@ -196,16 +191,13 @@ class GeneralisedIrtModel(BaseModel):
         self._model_params = params_to_tap
 
     def update_params(self, params):
-        #print('\nupdated vals bfore tao\n\n', self._model_params)
         self.tap_update(params)
-        #print('\nupdated vals after tap:\n', self._model_params)
         self.get_initializers(self._model_params)
 
     def adapter(self):
         return self._adapter
 
     def get_initializers(self, params):
-        #params_cp= params.copy()
         default_params = {'bias_param':0,  'reg': {'l1': 0, 'l2': 0}, 'group_l': {'l1': 0, 'l2': 0}}
         backends_li = ['keras', 'pytorch']
         dist_dict = {'normal': {'mean': 0, 'stddev': 1},
@@ -216,56 +208,25 @@ class GeneralisedIrtModel(BaseModel):
                          accessor=lambda default_params, k: default_params.setdefault(k, dict()))
 
         self.default_backend_dist_params = default_params
-        #out_idx= 0
         for key, vals in params.items():
-            sub_dict = default_params.copy()#copy.deepcopy(default_params)
-            #out_idx+=1
-            #rint('\n\nouter dict count', out_idx)
+            sub_dict = default_params.copy()
 
             if key not in ['hyper_params', 'model_nas_params']:
-            #if 'optimizer' not in vals.keys():
                 params[key].update({'bias_param':sub_dict['bias_param'] if 'bias_param' not in vals.keys() else params[key]['bias_param']})# else params[key]['bias_param']})
                 params[key].update({'bias':keras.initializers.Constant(value=params[key]['bias_param'])})#sub_dict['bias_param'] if 'bias' not in vals.keys() else params[key]['bias'])})
-                if 'regularizers' not in vals.keys():#for initial call
+                if 'regularizers' not in vals.keys():
                     params[key].update({'regularizers':sub_dict['reg']})#add default regularization
                 if 'group_lasso' not in vals.keys():
                     params[key].update({'group_lasso':sub_dict['group_l']})#add default regularization
-                #else:
-                 #   deep_get(params, [key,])
-                 #   params[key]
             if 'kernel_params' in vals.keys():
-                #iner_idx=0
-                custom_params = vals['kernel_params']#params[key]['kernel_params']
-                #if 'bias' not in vals.keys():
-                #    params[key].update({'bias':sub_dict['bias']})#add default bias
-                #bias_val = sub_dict['bias']
-                
-                #if 'bias_param' not in vals.keys():
-                #    params[key].update({'bias_param':sub_dict['bias_param']})# if 'bias_param' not in vals.keys() else pass})# else params[key]['bias_param']})
-                #params[key].update({'bias':keras.initializers.Constant(value=params[key]['bias_param'])})#sub_dict['bias_param'] if 'bias' not in vals.keys() else params[key]['bias'])})
-                #params[key].update({'regularizers':sub_dict['reg']})#add default regularization
-                
+                custom_params = vals['kernel_params']
                 if 'backend' not in custom_params.keys() or 'backend' == 'keras':
                     rel_li = ['backend', 'keras', 'distrib', custom_params['distrib']
                               ] if 'distrib' in custom_params else ['backend', 'keras', 'distrib', 'normal']
-                    #rel_slice = deep_get(sub_dict, rel_li).copy()
-                    rel_dict = deep_get(sub_dict, rel_li).copy()#rel_slice.copy()
-                    #relevant updated dictionary#contains 'distrib':'uniform if listed
-                    #print('key value:', key)
-                    #print('sub dict before:', sub_dict)
-                    #print('rel_li:', rel_li)
-                    #print('rel_dict before:', rel_dict)
-                    #print('custom_params before:', custom_params)
-
-
+                    rel_dict = deep_get(sub_dict, rel_li).copy()
                     rel_dict.update(custom_params)
-                    #print('\nrel_dict After:', rel_dict)
-                    #print('custom_params after:', custom_params)
-                    #print('sub dict after:', sub_dict)
                     params[key].update({'kernel': initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev'])
                                         if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
-                    #rel_dict=0
-
                 else:#for non-keras backend
                     if not custom_params['backend'] in self.default_backend_dist_params['backend'].keys():
                         raise ValueError('Backend: {} and its distributions are not yet defined in Generalised Model'.format(
@@ -280,51 +241,6 @@ class GeneralisedIrtModel(BaseModel):
                                         initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
         self._model_params.update(params)
 
-#    def get_initializers(self, params):
-#        default_params = {}
-#        backends_li = ['keras', 'pytorch']
-#        dist_dict = {'normal': {'mean': 0, 'stddev': 1},
-#                     'uniform': {'minval': 0, 'maxval': 0}}
-#        for backend in backends_li:# prepares a nested default config dict()
-#            for dist, pars in dist_dict.items():
-#                deep_set(default_params, ['backend', backend, 'distrib', dist], pars,
-#                         accessor=lambda default_params, k: default_params.setdefault(k, dict()))
-#
-#        self.default_backend_dist_params = default_params
-#
-#        for key, vals in params.items():
-#            sub_dict = default_params.copy()
-#            if 'kernel_params' in vals.keys():
-#                custom_params = vals['kernel_params']
-#                if 'backend' not in custom_params.keys() or 'backend' == 'keras':
-#                    rel_li = ['backend', 'keras', 'distrib', custom_params['distrib']
-#                              ] if 'distrib' in custom_params else ['backend', 'keras', 'distrib', 'normal']
-#                    rel_dict = deep_get(sub_dict, rel_li)
-#                    #relevant updated dictionary#contains 'distrib':'uniform if listed
-#                    rel_dict.update(custom_params)
-#                    params[key].update({'kernel': initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev'])
-#                                        if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
-#
-#                    params[key].update({'bias': initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev'])
-#                                        if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
-#                else:#for non-keras backend
-#                    if not custom_params['backend'] in self.default_backend_dist_params['backend'].keys():
-#                        raise ValueError('Backend: {} and its distributions are not yet defined in Generalised Model'.format(
-#                            custom_params['backend']))
-#
-#                    rel_li = ['backend', custom_params['backend'], 'distrib',
-#                              custom_params['distrib']]
-#                    rel_dict = deep_get(sub_dict, rel_li)
-#                    rel_dict.update(custom_params)
-#
-#                    params[key].update({'kernel': initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev']) if 'normal' in rel_li else
-#                                        initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
-#
-#                    params[key].update({'bias': initializers.RandomNormal(mean=rel_dict['mean'], stddev=rel_dict['stddev'])
-#                                        if 'normal' in rel_li else initializers.RandomUniform(minval=rel_dict['minval'], maxval=rel_dict['maxval'])})
-#        self._model_params.update(params)
-
-
 @registry.register
 class KerasIrt1PLModel(GeneralisedIrtModel):
     def __init__(self):
@@ -338,7 +254,6 @@ class KerasIrt1PLModel(GeneralisedIrtModel):
                         'disc_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'train':False, 'act':'exponential', 'use_bias':False},
                         'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5,'train': False, 'act': 'sigmoid', 'use_bias':True},
                         'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
-                        #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         default_nas_config={"diff_params.kernel_params.stddev": hp.uniform("diff_params.kernel_params.stddev", 0.4, 1.5),
@@ -362,7 +277,6 @@ class KerasIrt2PLModel(GeneralisedIrtModel):
                         'disc_params': {'units': 1, 'kernel_params': {}, 'train': True, 'act':'exponential', 'use_bias':False},
                         'guess_params': {'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
                         'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
-                        #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         default_nas_config={"diff_params.kernel_params.stddev": hp.uniform("diff_params.kernel_params.stddev", 0.4, 1.5),
@@ -383,15 +297,13 @@ class KerasIrt3PLModel(GeneralisedIrtModel):
         model_params = {'ability_params': {'units': 1, 'kernel_params': {}, 'use_bias':False},
                         'diff_params': {'units': 1, 'kernel_params': {},'use_bias':False},
                         'disc_params': {'units': 1, 'kernel_params': {}, 'train': True, 'act':'exponential', 'use_bias':False},
-                        'guess_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3, 'train': True, 'act': 'sigmoid', 'use_bias':True},#{'distrib': 'uniform', 'minval': 0, 'maxval': -2.5}
+                        'guess_params': {'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3, 'train': True, 'act': 'sigmoid', 'use_bias':True},
                         'slip_params':{'units': 1, 'kernel_params': {'distrib': 'uniform'}, 'bias_param':-3.5, 'train': False, 'act': 'sigmoid', 'use_bias':True},
-                        #'regularizers': {'l1': 0, 'l2': 0},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
 
         default_nas_config = {"guess_params.bias_param": hp.uniform("guess_params.bias_param", -5, -2),
-                            "slip_params.bias_param": hp.uniform("slip_params.bias_param", -5,-2)}#--if nas params should have separate set & get methods?
+                            "slip_params.bias_param": hp.uniform("slip_params.bias_param", -5,-2)}
         model_params.update({'model_nas_params':{'search_algo_name':'hyperOpt', 'search_space':default_nas_config}})
-
         self.set_params(params=model_params, set_by='model_init')
 
 
@@ -409,7 +321,6 @@ class KerasIrt4PLModel(GeneralisedIrtModel):
                         'slip_params':{'units': 1, 'kernel_params': {'stddev': 0}, 'bias_param':-3.5, 'train': True, 'act': 'sigmoid', 'use_bias':True},
                         'hyper_params': {'units': 1, 'optimizer': 'sgd', 'loss': 'binary_crossentropy'}}
         default_nas_config = {"guess_params.bias_param": hp.uniform("guess_params.bias_param", -5, -2),
-                            "slip_params.bias_param": hp.uniform("slip_params.bias_param", -5,-2)}#--if nas params should have separate set & get methods?
+                            "slip_params.bias_param": hp.uniform("slip_params.bias_param", -5,-2)}
         model_params.update({'model_nas_params':{'search_algo_name':'hyperOpt', 'search_space':default_nas_config}})
-
         self.set_params(params=model_params, set_by='model_init')
