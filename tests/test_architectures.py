@@ -1,6 +1,7 @@
 import pytest
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, Lasso, ElasticNet
 from sklearn.svm import LinearSVC, SVC
@@ -12,9 +13,49 @@ from keras.utils import to_categorical
 from mlsquare.base import registry
 from mlsquare.adapters import SklearnKerasClassifier
 from mlsquare.architectures.sklearn import GeneralizedLinearModel, KernelGeneralizedLinearModel, CART
-from datasets import _load_diabetes, _load_iris
+from datasets import _load_diabetes, _load_iris, _load_boston, _load_simIrt, _load_1PL_IrtData
+from sklearn.decomposition import TruncatedSVD
+import tensorflow as tf
+from mlsquare.models.embibe import rasch
 
+def _load_irt_data():
+    col_name = ['question_code', 'user_id', 'difficulty', 'ability', 'response']
+    X,y =_load_simIrt()
+    xtrain, xtest, ytrain, ytest= train_test_split(X, y, test_size=0.5, random_state=0)
+    x_train_u= xtrain[[col_name[1]]]
+    x_train_q= xtrain[[col_name[0]]]
+    y_train = ytrain
 
+    x_test_u= xtest[[col_name[1]]]
+    x_test_q= xtest[[col_name[0]]]
+    pij_true= xtest[[col_name[-1]]]
+    t_abilities= sorted({_.user_id:_.ability for _ in X.itertuples(index=True)}.items())
+    t_abilities= np.array(list(dict(t_abilities).values()))
+    return x_train_u, x_train_q, y_train, x_test_u, x_test_q, pij_true, t_abilities
+
+def _load_1PL_data_params_combinations():
+    xtrain, y_train, x_train_user, x_train_questions = _load_1PL_IrtData()
+
+    layer_name= ['latent_trait/ability','difficulty_level', 'disc_param', 'guessing_param', 'slip_param']
+    model_param_keys= ['ability_params', 'diff_params', 'disc_params', 'guess_params', 'slip_params']
+    params_layer_dict = dict(zip(model_param_keys,layer_name))
+
+    x= np.zeros((32,5))#Placeholder for all possible layer combinations
+    for comb in range(x.shape[0]):
+        rep = np.array(list(np.binary_repr(comb)), dtype= np.int8)#binary analog
+        np.copyto(x[comb][: rep.shape[0]], rep)
+
+    df =pd.DataFrame(x, columns= model_param_keys)
+    for col in df.columns:
+        df[col]= df[col].apply(lambda x: col if x==1 else 0)
+    df.drop_duplicates()
+
+    return xtrain, y_train, x_train_user, x_train_questions, df, params_layer_dict
+
+def _load_decomposition_data():
+    X, Y = _load_boston()
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.60, random_state=0)
+    return x_train
 
 def _load_regression_data():
     X, Y = _load_diabetes()
@@ -86,6 +127,123 @@ def _prepare_mock_model(parent_class, adapter, module_name, model_name, version,
         mock_model.primal = DecisionTreeClassifier().fit(x_train, y_train)
     mock_proxy_model = mock_model.create_model()
     return mock_proxy_model
+
+def _run_decomposition_test(primal_model_class, num_components):
+    X = _load_decomposition_data()
+    primal_model = primal_model_class(n_components= num_components)
+    proxy_model = _mock_dope(primal_model)
+    sess= tf.Session()
+
+    tf_trans_x = proxy_model.fit_transform(X)
+    tf_sigma = proxy_model.singular_values_ 
+    tf_U = tf_trans_x/tf_sigma
+    tf_V= proxy_model.components_
+    tf_approx_recon =  sess.run(tf.matmul(tf_U, tf.matmul(tf.linalg.diag(tf_sigma), tf_V)))#, adjoint_b=True) v.T in arch-line#161
+    #tf_approx_recon= np.dot(tf_U, np.dot(np.diag(tf_sigma), tf_V))#Since tf_U/tf_V are not tensors anymore
+
+    skl_trans_x = primal_model.fit_transform(X)
+    skl_sigma = primal_model.singular_values_    
+    skl_U = skl_trans_x/skl_sigma
+    skl_V= primal_model.components_
+    skl_approx_recon = np.dot(skl_U, np.dot(np.diag(skl_sigma), skl_V))
+
+    result = np.allclose(tf_approx_recon, skl_approx_recon)
+    _, p_value = stats.ttest_rel(tf_sigma, skl_sigma)
+
+    return result, p_value
+
+def _irt_1PL_bias_update_test(primal_model_class):
+    xtrain, y_train, x_train_user, x_train_questions, df, params_layer_dict = _load_1PL_data_params_combinations()
+    primal_model = primal_model_class()
+    model_skeleton, adapt = registry[('mlsquare', primal_model.__class__.__name__)]['default']
+
+    results= []
+    input_bias_values= []
+    obtained_bias_values=[]
+    for val in df.values[:8]:
+        layer_keys = val[np.where(val!=0)]
+        random_bias = np.random.randint(2,7, len(layer_keys))
+        input_bias_values.append(random_bias.tolist())
+        bias_list = [{'bias_param':v} for v in random_bias]
+        params_ = dict(zip(layer_keys, bias_list))
+
+        proxy_model = adapt(model_skeleton, primal_model)
+        proxy_model.fit(x_user= x_train_user, x_questions= x_train_questions, y_vals= y_train, batch_size= 30, epochs=1, params=params_)
+
+        for k1, v1 in params_layer_dict.items():
+            for idx, layer in enumerate(proxy_model.model.layers):
+                if layer.name==v1:
+                    params_layer_dict[k1]= idx
+        res= []
+        obtained_bias_=[]
+        for keys, vals in params_.items():
+            obtained_bias = proxy_model.model.layers[params_layer_dict[keys]].get_config()['bias_initializer']['config']['value']
+            res.append(vals['bias_param']==obtained_bias)
+            obtained_bias_.append(obtained_bias)
+
+        results.append(res)
+        obtained_bias_values.append(obtained_bias_)
+    return input_bias_values, obtained_bias_values, results
+
+
+def _run_irt_ttest(primal_model_class, epochs):
+    x_user, x_question, y, x_test_user, x_test_quest, pij_true, true_abiltities = _load_irt_data()
+    primal_model = primal_model_class()
+    model_skeleton, adapt = registry[('mlsquare', primal_model.__class__.__name__)]['default']
+    proxy_model = adapt(model_skeleton, primal_model)
+
+    x_user = to_categorical(x_user.values, num_classes =x_user.nunique()[0])
+    x_quest = to_categorical(x_question.values, num_classes =x_question.nunique()[0])
+    proxy_model.fit(x_user= x_user, x_questions= x_quest, y_vals= y, batch_size=64, epochs= epochs)
+
+    x_test_user = to_categorical(x_test_user.values, num_classes =x_test_user.nunique()[0])
+    x_test_quest = to_categorical(x_test_quest.values, num_classes =x_test_quest.nunique()[0])
+    pij_est = proxy_model.predict(x_test_user, x_test_quest)
+
+    pij_est= pij_est.reshape(-1)
+    pij_true = pij_true.values.reshape(-1)
+    est_abilities= [layer.get_weights()[0] for layer in proxy_model.model.layers if layer.name== 'latent_trait/ability']
+    est_abilities= est_abilities[0].reshape(-1)
+
+    _, p_val_abl= stats.ttest_rel(est_abilities, true_abiltities)
+    _, p_value_pred = stats.ttest_rel(pij_est, pij_true)#est vs. true
+    _, p_value_dist = stats.kstest(est_abilities, 'norm')#Kolmogorov-Smirnov
+
+    return p_val_abl, p_value_pred, p_value_dist
+
+def test_1PL_bias_updation_functionality():
+    input_b, obtained_b, comp_results = _irt_1PL_bias_update_test(rasch)
+    #print('\ninputs:',input_b,'\noutputs:',obtained_b)
+    assert input_b==obtained_b
+
+def test_svd_reconstruction():
+    result, _ = _run_decomposition_test(TruncatedSVD, 10)
+    assert result is True
+
+def test_svd_sigma_vals():
+    _, p_value = _run_decomposition_test(TruncatedSVD, 10)
+    assert p_value > 1e-01
+
+@pytest.mark.xfail()
+def test_irt_ability_dist_prediction_abilities():
+    pval_abl, pval_pred, pval = _run_irt_ttest(rasch, 300)
+    #_ , _, pval = _run_irt_ttest(rasch, 600)
+    dist_flag= pval>0.05
+    pred_flag= pval_pred<0.1
+    abl_comp_flag= pval_abl<0.1
+    flag_msg_di = dict(zip(['dist_flag', 'pred_flag', 'abl_comp_flag'], [
+        'Abilities are NOT distributed normally.',
+        'True Vs. Estimated predictions differ.', 
+        'True Vs. Estimated abilities differ.']))
+    for flag, message in flag_msg_di.items():
+        assert eval(flag), message
+    #assert pval>0.05, "abilities are NOT distributed normally."
+
+#@pytest.mark.xfail()
+#def test_irt_prediction_abilities():
+#    pval_abl, pval_pred, _ = _run_irt_ttest(rasch, 600)
+#    assert pval_pred<0.1
+#    assert pval_abl<0.1
 
 @pytest.mark.xfail()
 def test_linear_regression_ttest():

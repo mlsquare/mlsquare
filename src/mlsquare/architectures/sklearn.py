@@ -87,6 +87,66 @@ class GeneralizedLinearModel(BaseModel):
     def adapter(self):
         return self._adapter
 
+@registry.register
+class PytorchLogisticRegression(GeneralizedLinearModel):
+    def __init__(self):
+        self.adapter = SklearnPytorchClassifier
+        self.module_name = 'sklearn'
+        self.name = 'LogisticRegression'
+        self.version = 'V2'
+        self.modeling_backend = 'pytorch' ## proxy_framework
+        model_params = {'layer_1': {'units': 1, ## Make key name private - '_layer'
+                                     'l1': 0,
+                                     'l2': 0,
+                                     'activation': 'sigmoid'},
+                         'optimizer': 'adam',
+                         'loss': 'binary_crossentropy'
+                         } ## proxy_model_params
+        self.set_params(params=model_params, set_by='model_init')
+
+    def create_model(self, **kwargs):
+        model_params = _parse_params(self._model_params, return_as='nested')
+        #if len(self.y.shape) == 1 or self.y.shape[1] == 1:
+        #    units = 1
+        #else:
+        #    units = self.y.shape[1]
+        units=1
+        model_params['layer_1'].update({'input_dim': 4, 'units': units})#self.X.shape[1]
+
+        import torch.nn as nn
+        import torch.nn.functional as F
+        import torch.optim as optim
+        #class network(nn.Module):
+        #    def __init__(self):
+        #        super(network, self).__init__()
+        #        self.fc_layer = nn.Linear(model_params['layer_1']['input_dim'], model_params['layer_1']['units'], bias=False)
+        #        #self.fc_layer2 = nn.Linear(model_params['layer_1']['units'], model_params['layer_1']['units'], bias=False)
+        #        #self.fc2 = nn.Linear(200, 10)
+        #    def forward(self, x):
+        #        #if model_params['layer_1']['input_dim']=='sigmoid':
+        #        x= F.sigmoid(self.fc_layer(x))
+        #        return x
+        class network(nn.Module):
+            def __init__(self):
+                super(network, self).__init__()
+                self.fc1 = nn.Linear(4, 100)
+                self.fc2 = nn.Linear(100, 100)
+                self.fc3 = nn.Linear(100, 3)
+                self.softmax = nn.Softmax(dim=1)
+
+            def forward(self, X):
+                X = F.relu(self.fc1(X))
+                X = self.fc2(X)
+                X = self.fc3(X)
+                X = self.softmax(X)
+                return X
+        model= network()
+        optimizer = optim.Adam(model.parameters())
+        criterion= nn.CrossEntropyLoss()
+        return (model, optimizer, criterion)
+
+
+
 class MatrixDecomposition(BaseTransformer):
     """
 	A base class for all matrix decomposition models.
@@ -158,6 +218,7 @@ class SVD(MatrixDecomposition):
         #u: normalised projection distances
         #v: decomposition/projection orthogonal axes
 
+        v = v.T#check v is consistent with numpy's v, as tf returns adjoint v
         self.components_= v[:n_components,:]
         X_transformed = u[:,:n_components] * s[:n_components]
 
@@ -172,11 +233,13 @@ class SVD(MatrixDecomposition):
 
     def transform(self, X):
         sess= tf.Session()
-        return sess.run(tf.tensordot(X, self.components_.T, axes=1))
+        res = sess.run(tf.tensordot(X, self.components_.T, axes=1))
+        return res
 
     def inverse_transform(self, X):
         sess= tf.Session()
-        return sess.run(tf.tensordot(X, self.components_, axes=1))
+        res = sess.run(tf.tensordot(X, self.components_, axes=1))
+        return res 
 
 @registry.register
 class LogisticRegression(GeneralizedLinearModel):
