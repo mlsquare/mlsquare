@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from keras.models import Sequential
-from keras.layers import Dense, Input
-from keras.regularizers import l1_l2
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.regularizers import l1_l2
 import numpy as np
-from keras.models import Model
+from tensorflow.keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel, BaseTransformer
 from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnTfTransformer, SklearnPytorchClassifier
@@ -239,7 +239,7 @@ class SVD(MatrixDecomposition):
     def inverse_transform(self, X):
         sess= tf.Session()
         res = sess.run(tf.tensordot(X, self.components_, axes=1))
-        return res 
+        return res
 
 @registry.register
 class LogisticRegression(GeneralizedLinearModel):

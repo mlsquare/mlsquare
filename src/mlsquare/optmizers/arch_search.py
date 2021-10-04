@@ -51,8 +51,19 @@ def get_opt_model(x_user, x_questions, y_vals, proxy_model, **kwargs):
         dict_['cfg']= dict_['nas_params_']['config']
         ray_verbose = False
         _ray_log_level = logging.INFO if ray_verbose else logging.ERROR
-        ray.init(log_to_driver=False, logging_level=_ray_log_level, ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
-                 num_cpus=4)
+        if not ray.is_initialized():
+            try:
+                ray.init(
+                    log_to_driver=False,
+                    logging_level=_ray_log_level,
+                    ignore_reinit_error=True,
+                    _redis_max_memory=2*1000*1000*1000,
+                    object_store_memory=1000000000,
+                    num_cpus=4)
+            except RuntimeError as e:
+                print("Couldn't initialize `ray` automatically. Please initialize `ray` using `ray.init()` to search for the best model", e)
+                exit
+
 
         def process_config(config):
             i=0

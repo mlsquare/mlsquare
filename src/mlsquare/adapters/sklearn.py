@@ -14,7 +14,7 @@ import pandas as pd
 from dict_deep import *
 import matplotlib.pyplot as plt
 import time
-import keras.backend as K
+import tensorflow.keras.backend as K
 import warnings
 from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
@@ -109,7 +109,7 @@ class IrtKerasRegressor():
                     self.proxy_model.name = 'fourPL'
 
         print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-        
+
         self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)
 
         # Following lets user access each coeffs as and when required
@@ -141,7 +141,7 @@ class IrtKerasRegressor():
         kwargs.setdefault('latent_traits', None)
         kwargs.setdefault('nas_params', None)
         kwargs.setdefault('num_samples', 4)
-        
+
         self.proxy_model.x_train_user = x_user
         self.proxy_model.x_train_questions = x_questions
         self.proxy_model.y_ = y_vals
@@ -198,7 +198,7 @@ class IrtKerasRegressor():
                 rel_layers_idx.append(idx)
 
         wt_plus_bias= lambda x: x[0]+ x[1]#For layers employing bias values
-        coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[0] 
+        coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[0]
             if self.model.layers[idx].bias is None else wt_plus_bias(self.model.layers[idx].get_weights())
             for idx in rel_layers_idx}
         t_4PL = {'tpm': ['guessing_param'], 'fourPL': [

@@ -8,7 +8,7 @@ from sklearn.svm import LinearSVC, SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 
 from mlsquare.base import registry
 from mlsquare.adapters import SklearnKerasClassifier
@@ -135,14 +135,14 @@ def _run_decomposition_test(primal_model_class, num_components):
     sess= tf.Session()
 
     tf_trans_x = proxy_model.fit_transform(X)
-    tf_sigma = proxy_model.singular_values_ 
+    tf_sigma = proxy_model.singular_values_
     tf_U = tf_trans_x/tf_sigma
     tf_V= proxy_model.components_
     tf_approx_recon =  sess.run(tf.matmul(tf_U, tf.matmul(tf.linalg.diag(tf_sigma), tf_V)))#, adjoint_b=True) v.T in arch-line#161
     #tf_approx_recon= np.dot(tf_U, np.dot(np.diag(tf_sigma), tf_V))#Since tf_U/tf_V are not tensors anymore
 
     skl_trans_x = primal_model.fit_transform(X)
-    skl_sigma = primal_model.singular_values_    
+    skl_sigma = primal_model.singular_values_
     skl_U = skl_trans_x/skl_sigma
     skl_V= primal_model.components_
     skl_approx_recon = np.dot(skl_U, np.dot(np.diag(skl_sigma), skl_V))
@@ -233,7 +233,7 @@ def test_irt_ability_dist_prediction_abilities():
     abl_comp_flag= pval_abl<0.1
     flag_msg_di = dict(zip(['dist_flag', 'pred_flag', 'abl_comp_flag'], [
         'Abilities are NOT distributed normally.',
-        'True Vs. Estimated predictions differ.', 
+        'True Vs. Estimated predictions differ.',
         'True Vs. Estimated abilities differ.']))
     for flag, message in flag_msg_di.items():
         assert eval(flag), message

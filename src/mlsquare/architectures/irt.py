@@ -1,17 +1,17 @@
 import numpy as np
 import keras
-from keras import backend as K
+from tensorflow.keras import backend as K
 from ..base import registry, BaseModel
 from ..adapters.sklearn import IrtKerasRegressor
-from keras.layers import Dense, Input
-from keras.regularizers import l1_l2
-from keras.models import Model
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.regularizers import l1_l2
+from tensorflow.keras.models import Model
 from ..utils.functions import _parse_params
-from keras.layers import Lambda
-from keras import regularizers
-from keras import initializers
-from keras.layers import Activation
-from keras import metrics
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras import regularizers
+from tensorflow.keras import initializers
+from tensorflow.keras.layers import Activation
+from tensorflow.keras import metrics
 from hyperopt import hp
 from dict_deep import *
 #import copy
@@ -39,7 +39,7 @@ class GeneralisedIrtModel(BaseModel):
 
 	update_params(params)
         Method to update params.
-    
+
     tap_update(params):
         Method to update specific model parameters without affect the unspecified defaults
 
@@ -60,7 +60,7 @@ class GeneralisedIrtModel(BaseModel):
             model_params['input_dims_items'],), name='questions/items')
 
         if not self.l_traits == None:
-            pass 
+            pass
             # provision to add latent traits to first layer
             # latent_trait = Dense(1, use_bias=False,
             #    kernel_initializer= initializers.RandomNormal(mean=0, stddev=1.0, seed=None),

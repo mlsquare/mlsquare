@@ -4,16 +4,25 @@ import ray
 import os
 import numpy as np
 
-# Initialize ray
-ray.init(ignore_reinit_error=True, redis_max_memory=20*1000*1000*1000, object_store_memory=1000000000,
-         num_cpus=4)
-
 ## Push this as a class with the package name. Ex - class tune(): pass
 def get_best_model(X, y, proxy_model, primal_data, **kwargs):
+    # Initialize ray
+    if not ray.is_initialized():
+        try:
+            ray.init(
+                ignore_reinit_error=True,
+                _redis_max_memory=2*1000*1000*1000,
+                object_store_memory=1000000000,
+                num_cpus=4)
+        except RuntimeError as e:
+            print("Couldn't initialize `ray` automatically. Please initialize `ray` using `ray.init()` to search for the best model", e)
+            exit
+
+
     y_pred = np.array(primal_data['y_pred'])
     kwargs.setdefault('epochs', 250)
     kwargs.setdefault('batch_size', 40)
-    kwargs.setdefault('verbose', 0)
+    kwargs.setdefault('verbose', 1)
 
     def train_model(config, reporter): ## Change config name
         '''
@@ -34,7 +43,7 @@ def get_best_model(X, y, proxy_model, primal_data, **kwargs):
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
 
     # Define experiment configuration
-    configuration = tune.Experiment("experiment_name",
+    configuration = tune.Experiment("mlsquare_dope",
                                     run=train_model,
                                     resources_per_trial={"cpu": 4},
                                     stop={"mean_accuracy": 95},
