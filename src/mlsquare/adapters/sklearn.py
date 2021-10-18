@@ -394,7 +394,7 @@ class SklearnKerasClassifier():
         self.final_model = get_best_model(X, y, proxy_model=self.proxy_model,
                                           primal_data=primal_data, epochs=kwargs[
                                               'epochs'], batch_size=kwargs['batch_size'],
-                                          verbose=kwargs['verbose'])
+                                          verbose=kwargs['verbose'], primal_model=primal_model)
         return self.final_model  # Return self? IMPORTANT
 
     def save(self, filename=None):
@@ -512,7 +512,7 @@ class SklearnKerasRegressor():
 
         self.final_model = get_best_model(X, y, proxy_model=self.proxy_model, primal_data=primal_data,
                                           epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
-                                          verbose=kwargs['verbose'])
+                                          verbose=kwargs['verbose'], primal_model=self.primal_model)
         return self.final_model  # Not necessary.
 
     def score(self, X, y, **kwargs):

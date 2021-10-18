@@ -42,7 +42,7 @@ class GeneralizedLinearModel(BaseModel):
     """
 
     def create_model(self, **kwargs):
-
+        kwargs.setdefault('metric', 'accuracy')
         model_params = _parse_params(self._model_params, return_as='nested')
         # Why make it private? Alternate name?
         # Move parsing to base model
@@ -63,7 +63,7 @@ class GeneralizedLinearModel(BaseModel):
                                                  l2=model_params['layer_1']['l2'])))
         model.compile(optimizer=model_params['optimizer'],
                       loss=model_params['loss'],
-                      metrics=['accuracy'])
+                      metrics=[kwargs['metric']])
 
         return model
 
@@ -253,7 +253,7 @@ class LogisticRegression(GeneralizedLinearModel):
                         'l2': 0,
                         'activation': 'sigmoid'},
                         'optimizer': 'adam',
-                        'loss': 'binary_crossentropy'
+                        'loss': 'binary_crossentropy',
                         }
 
         self.set_params(params=model_params, set_by='model_init')

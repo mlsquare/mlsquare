@@ -3,9 +3,18 @@ import ray
 # from ray.tune.suggest import HyperOptSearch
 import os
 import numpy as np
+from ..utils.functions import _get_model_name
 
 ## Push this as a class with the package name. Ex - class tune(): pass
-def get_best_model(X, y, proxy_model, primal_data, **kwargs):
+def get_best_model(X, y, proxy_model, primal_data, primal_model, **kwargs):
+    _model_name = _get_model_name(primal_model)
+
+    if _model_name in ['LogisticRegression', 'LinearDiscriminantAnalysis']:
+        _measure_metric = 'accuracy'
+        _ray_stop_criterion = {"mean_accuracy": 95}
+    else:
+        _measure_metric = 'mean_squared_error'
+        _ray_stop_criterion = {"mean_accuracy": 5}
     # Initialize ray
     _local_ray_init = False
     if not ray.is_initialized():
@@ -33,37 +42,30 @@ def get_best_model(X, y, proxy_model, primal_data, **kwargs):
             which the iterations should be optimized.
         '''
         proxy_model.set_params(params=config, set_by='optimizer')
-        model = proxy_model.create_model()
+        model = proxy_model.create_model(metric=_measure_metric)
         model.fit(X, y_pred, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'], verbose=kwargs['verbose'])
         accuracy = model.evaluate(X, y_pred)[1]
-        print("Tune: Accuracy {}".format(accuracy))
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
-
-    _ray_stop_criterion = {"mean_accuracy": 95}
-
-
 
     # Define experiment configuration
     configuration = tune.Experiment("mlsquare_dope",
                                     run=train_model,
                                     resources_per_trial={"cpu": 4},
-                                    stop={"mean_accuracy": 95},
+                                    stop=_ray_stop_criterion,
                                     config=proxy_model.get_params())
-                                    # config=kwargs['params'])
 
     trials = tune.run_experiments(configuration, verbose=2)
 
-    metric = "mean_accuracy"
-
     # Restore a model from the best trial.
-    sorted_trials = get_sorted_trials(trials, metric)
+    sorted_trials = get_sorted_trials(trials, "mean_accuracy")
+
     for best_trial in sorted_trials:
         try:
             print("Creating model...")
             proxy_model.set_params(params=best_trial.config, set_by='optimizer')
-            best_model = proxy_model.create_model()
+            best_model = proxy_model.create_model(metric=_measure_metric)
             weights = os.path.join(
                 best_trial.logdir, best_trial.last_result["checkpoint"])
             print("Loading from", weights)
