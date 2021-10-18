@@ -7,16 +7,14 @@ import numpy as np
 ## Push this as a class with the package name. Ex - class tune(): pass
 def get_best_model(X, y, proxy_model, primal_data, **kwargs):
     # Initialize ray
+    _local_ray_init = False
     if not ray.is_initialized():
         try:
-            ray.init(
-                ignore_reinit_error=True,
-                _redis_max_memory=2*1000*1000*1000,
-                object_store_memory=1000000000,
-                num_cpus=4)
+            ray.init()
+            _local_ray_init = True
         except RuntimeError as e:
             print("Couldn't initialize `ray` automatically. Please initialize `ray` using `ray.init()` to search for the best model", e)
-            exit
+            return proxy_model.primal_model
 
 
     y_pred = np.array(primal_data['y_pred'])
@@ -38,9 +36,14 @@ def get_best_model(X, y, proxy_model, primal_data, **kwargs):
         model = proxy_model.create_model()
         model.fit(X, y_pred, epochs=kwargs['epochs'], batch_size=kwargs['batch_size'], verbose=kwargs['verbose'])
         accuracy = model.evaluate(X, y_pred)[1]
+        print("Tune: Accuracy {}".format(accuracy))
         last_checkpoint = "weights_tune_{}.h5".format(config)
         model.save_weights(last_checkpoint)
         reporter(mean_accuracy=accuracy, checkpoint=last_checkpoint)
+
+    _ray_stop_criterion = {"mean_accuracy": 95}
+
+
 
     # Define experiment configuration
     configuration = tune.Experiment("mlsquare_dope",
@@ -71,6 +74,8 @@ def get_best_model(X, y, proxy_model, primal_data, **kwargs):
             print(e)
             print("Loading failed. Trying next model")
 
+    if _local_ray_init:
+        ray.shutdown()
     return best_model
 
 

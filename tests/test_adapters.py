@@ -1,4 +1,4 @@
-import keras
+from tensorflow.python import keras
 # import onnxruntime
 import pytest
 import numpy as np
@@ -24,14 +24,14 @@ def test_irt_Keras_regressor_with_illformat_nas_params():
     primal_model = rasch()
     proxy_model, mock_adapt = registry[('mlsquare', 'rasch')]['default']
     model = mock_adapt(proxy_model, primal_model)
-    
+
     di_error_config= {'ss_config1': (ValueError,[{
     "diff_params.kernel_params.mean": hp.uniform("diff_params.kernel_params.mean", -0.5,0.5)}]),
           'ss_config2': (TypeError, {
     "diff_params.kernel_params.mean": hp.uniform("diff_params.kernel_params.mean", [-0.5,0.5])}),
           'ss_config3': [BaseException, {
     "diff_params.kernel_params": hp.uniform("diff_params.kernel_params", -0.5,0.5)}],
-         'ss_config4': [IndexError, {}]  
+         'ss_config4': [IndexError, {}]
           }
     di_error_msg= {ValueError: "Ill-format Search Space is passed/accepeted in nas_params",
     TypeError:"Boundary values in wrong format are passed/accepted in nas_params",

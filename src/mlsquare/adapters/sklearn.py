@@ -14,7 +14,7 @@ import pandas as pd
 from dict_deep import *
 import matplotlib.pyplot as plt
 import time
-import tensorflow.keras.backend as K
+import tensorflow.python.keras.backend as K
 import warnings
 from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
@@ -104,7 +104,7 @@ class IrtKerasRegressor():
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
             # triggers for fourPL model
-            if self.proxy_model.name is 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
+            if self.proxy_model.name == 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
                 if self.params['slip_params']['train']:
                     self.proxy_model.name = 'fourPL'
 

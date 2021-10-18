@@ -1,17 +1,17 @@
 import numpy as np
-import keras
-from tensorflow.keras import backend as K
+from tensorflow.python import keras
+from tensorflow.python.keras import backend as K
 from ..base import registry, BaseModel
 from ..adapters.sklearn import IrtKerasRegressor
-from tensorflow.keras.layers import Dense, Input
-from tensorflow.keras.regularizers import l1_l2
-from tensorflow.keras.models import Model
+from tensorflow.python.keras.layers import Dense, Input
+from tensorflow.python.keras.regularizers import l1_l2
+from tensorflow.python.keras.models import Model
 from ..utils.functions import _parse_params
-from tensorflow.keras.layers import Lambda
-from tensorflow.keras import regularizers
-from tensorflow.keras import initializers
-from tensorflow.keras.layers import Activation
-from tensorflow.keras import metrics
+from tensorflow.python.keras.layers import Lambda
+from tensorflow.python.keras import regularizers
+from tensorflow.python.keras import initializers
+from tensorflow.python.keras.layers import Activation
+from tensorflow.python.keras import metrics
 from hyperopt import hp
 from dict_deep import *
 #import copy

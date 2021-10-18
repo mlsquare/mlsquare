@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input
-from tensorflow.keras.regularizers import l1_l2
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers import Dense, Input
+from tensorflow.python.keras.regularizers import l1_l2
 import numpy as np
-from tensorflow.keras.models import Model
+from tensorflow.python.keras.models import Model
 from sklearn.preprocessing import OneHotEncoder
 from ..base import registry, BaseModel, BaseTransformer
 from ..adapters.sklearn import SklearnKerasClassifier, SklearnKerasRegressor, SklearnTfTransformer, SklearnPytorchClassifier

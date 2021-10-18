@@ -8,7 +8,7 @@ from sklearn.svm import LinearSVC, SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
-from tensorflow.keras.utils import to_categorical
+from tensorflow.python.keras.utils import to_categorical
 
 from mlsquare.base import registry
 from mlsquare.adapters import SklearnKerasClassifier
