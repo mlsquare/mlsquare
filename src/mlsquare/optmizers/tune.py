@@ -4,17 +4,23 @@ import ray
 import os
 import numpy as np
 from ..utils.functions import _get_model_name
+import multiprocessing
 
 ## Push this as a class with the package name. Ex - class tune(): pass
 def get_best_model(X, y, proxy_model, primal_data, primal_model, **kwargs):
+    _num_cpus = multiprocessing.cpu_count()
+
+    if _num_cpus > 2:
+        _num_cpus = _num_cpus / 2
     _model_name = _get_model_name(primal_model)
 
     if _model_name in ['LogisticRegression', 'LinearDiscriminantAnalysis']:
         _measure_metric = 'accuracy'
-        _ray_stop_criterion = {"mean_accuracy": 95}
+        _ray_stop_criterion = {"mean_accuracy": 99}
     else:
         _measure_metric = 'mean_squared_error'
-        _ray_stop_criterion = {"mean_accuracy": 5}
+        _ray_stop_criterion = {"mean_accuracy": 1}
+
     # Initialize ray
     _local_ray_init = False
     if not ray.is_initialized():
@@ -52,7 +58,7 @@ def get_best_model(X, y, proxy_model, primal_data, primal_model, **kwargs):
     # Define experiment configuration
     configuration = tune.Experiment("mlsquare_dope",
                                     run=train_model,
-                                    resources_per_trial={"cpu": 4},
+                                    resources_per_trial={"cpu": _num_cpus},
                                     stop=_ray_stop_criterion,
                                     config=proxy_model.get_params())
 
