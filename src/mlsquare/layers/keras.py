@@ -1,4 +1,4 @@
-from keras.layers import Layer
+from tensorflow.python.keras.layers import Layer
 
 class Bin(Layer):
     """
@@ -36,7 +36,7 @@ class Bin(Layer):
         super(Bin, self).build(input_shape)
 
     def call(self, x):
-        from keras import backend as K # Fix
+        from tensorflow.python.keras import backend as K # Fix
         import tensorflow as tf
 
         X = x[:, self.index_of_feature : self.index_of_feature + 1]
@@ -69,7 +69,7 @@ class KronProd(Layer):
         super(KronProd, self).build(input_shape)
 
     def call(self, x):
-        # from keras import backend as K # Fix
+        # from tensorflow.python.keras import backend as K # Fix
         import tensorflow as tf
         # from functools import reduce
         input_tensor_list = x
@@ -152,7 +152,7 @@ class DecisionTree(Layer):
 
 
     def binning_fn(self,index_of_feature, num_of_cuts, x, temperature = 0.1):
-        from keras import backend as K # Fix
+        from tensorflow.python.keras import backend as K # Fix
         import tensorflow as tf
         X = x[:, index_of_feature - 1 : index_of_feature]
         D = num_of_cuts

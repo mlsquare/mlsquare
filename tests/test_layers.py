@@ -1,7 +1,7 @@
 from mlsquare.layers import Bin
 import numpy as np
-from keras.layers import Input
-from keras.models import Model
+from tensorflow.python.keras.layers import Input
+from tensorflow.python.keras.models import Model
 
 def test_bin_layer():
     visible = Input(shape=(4,))

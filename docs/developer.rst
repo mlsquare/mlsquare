@@ -154,12 +154,12 @@ Sample implementation
         1. Please make sure that you "register" your model in the registery by using the @register.registry decorator.
         2. Define all mandatory attributes mention earlier in your model's `__init__()` method.
         3. Set your params once you have finalized using the `set_params()` method.
-        
+
 ------------------
 Writing test cases
 ------------------
 
-Please make sure that test cases are written with atleast 90% coverage for each new algorithm added. ``mlsquare`` utilizes ``pytest`` to execute test cases. Test cases should be added to the `tests <https://github.com/mlsquare/mlsquare/tree/master/tests>`__ folder to corresponding module's file. For example, test cases for a newly added algorithm would be defined in the `test_architectures.py<https://github.com/mlsquare/mlsquare/blob/master/tests/test_architectures.py>`__ file. Please feel free to reachout for help via our Slack channel if you face any difficulties in writing or understanding test cases.
+Please make sure that test cases are written with atleast 90% coverage for each new algorithm added. ``mlsquare`` utilizes ``pytest`` to execute test cases. Test cases should be added to the `tests <https://github.com/mlsquare/mlsquare/tree/master/tests>`__ folder to corresponding module's file. For example, test cases for a newly added algorithm would be defined in the `test_architectures.py <https://github.com/mlsquare/mlsquare/blob/master/tests/test_architectures.py>`__ file. Please feel free to reachout for help via our Slack channel if you face any difficulties in writing or understanding test cases.
 
 Once you have completed your test cases, you can run them using the following commands
 
@@ -199,5 +199,5 @@ FAQs
     a neural network model.
 
 4. What is Registry and what is it used for?
-    `mlsquare` maintains a registry of the model mappings defined in the architectures folder. This is to 
+    `mlsquare` maintains a registry of the model mappings defined in the architectures folder. This is to
     ensure easy access of models at point.

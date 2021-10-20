@@ -14,7 +14,7 @@ import pandas as pd
 from dict_deep import *
 import matplotlib.pyplot as plt
 import time
-import keras.backend as K
+import tensorflow.python.keras.backend as K
 import warnings
 from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
@@ -104,12 +104,12 @@ class IrtKerasRegressor():
             self.params = _parse_params(self.params, return_as='flat')
             self.proxy_model.update_params(self.params)
             # triggers for fourPL model
-            if self.proxy_model.name is 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
+            if self.proxy_model.name == 'tpm' and 'slip_params' in self.params and 'train' in self.params['slip_params'].keys():
                 if self.params['slip_params']['train']:
                     self.proxy_model.name = 'fourPL'
 
         print('\nIntitializing fit for {} model. . .\nBatch_size: {}; epochs: {};'.format(self.proxy_model.name, kwargs['batch_size'], kwargs['epochs']))
-        
+
         self.model, self.trials, exe_time = get_opt_model(x_user, x_questions, y_vals, proxy_model= self.proxy_model, **kwargs)
 
         # Following lets user access each coeffs as and when required
@@ -141,7 +141,7 @@ class IrtKerasRegressor():
         kwargs.setdefault('latent_traits', None)
         kwargs.setdefault('nas_params', None)
         kwargs.setdefault('num_samples', 4)
-        
+
         self.proxy_model.x_train_user = x_user
         self.proxy_model.x_train_questions = x_questions
         self.proxy_model.y_ = y_vals
@@ -198,7 +198,7 @@ class IrtKerasRegressor():
                 rel_layers_idx.append(idx)
 
         wt_plus_bias= lambda x: x[0]+ x[1]#For layers employing bias values
-        coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[0] 
+        coef = {self.model.layers[idx].name: self.model.layers[idx].get_weights()[0]
             if self.model.layers[idx].bias is None else wt_plus_bias(self.model.layers[idx].get_weights())
             for idx in rel_layers_idx}
         t_4PL = {'tpm': ['guessing_param'], 'fourPL': [
@@ -394,7 +394,7 @@ class SklearnKerasClassifier():
         self.final_model = get_best_model(X, y, proxy_model=self.proxy_model,
                                           primal_data=primal_data, epochs=kwargs[
                                               'epochs'], batch_size=kwargs['batch_size'],
-                                          verbose=kwargs['verbose'])
+                                          verbose=kwargs['verbose'], primal_model=primal_model)
         return self.final_model  # Return self? IMPORTANT
 
     def save(self, filename=None):
@@ -512,7 +512,7 @@ class SklearnKerasRegressor():
 
         self.final_model = get_best_model(X, y, proxy_model=self.proxy_model, primal_data=primal_data,
                                           epochs=kwargs['epochs'], batch_size=kwargs['batch_size'],
-                                          verbose=kwargs['verbose'])
+                                          verbose=kwargs['verbose'], primal_model=self.primal_model)
         return self.final_model  # Not necessary.
 
     def score(self, X, y, **kwargs):

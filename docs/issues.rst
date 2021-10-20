@@ -6,7 +6,7 @@ __ https://github.com/mlsquare/mlsquare/issues
 
 
 Creating a new Issue
-================
+====================
 
 1. To create a new issue, navigate to the `github`__ page of the project and create an issue from the `issues`__ column
 

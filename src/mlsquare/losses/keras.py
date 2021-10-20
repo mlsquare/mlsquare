@@ -81,17 +81,17 @@ def mse_in_theano(y_true, y_pred):
 
 def quantile_loss(quantile=0.5):
     def loss(y_true, y_pred,quantile=quantile):
-        from keras import backend as K
+        from tensorflow.python.keras import backend as K
         e = y_pred-y_true
         Ie = (K.sign(e)+1)/2
         return K.mean(e*(Ie-quantile),axis=-1)
     return loss
-    
-# https://stats.stackexchange.com/questions/249874/the-issue-of-quantile-curves-crossing-each-other    
+
+# https://stats.stackexchange.com/questions/249874/the-issue-of-quantile-curves-crossing-each-other
 def quantile_ensemble_loss(quantile=0.5,margin=0,alpha=0):
-    
+
     def loss(y_true, y_pred, q=quantile,margin=margin,alpha=alpha):
-        from keras import backend as K
+        from tensorflow.python.keras import backend as K
         error = y_true - y_pred
         quantile_loss = K.mean(K.maximum(q*error, (q-1)*error))
         diff = y_pred[:, 1:] - y_pred[:, :-1]
@@ -100,9 +100,9 @@ def quantile_ensemble_loss(quantile=0.5,margin=0,alpha=0):
     return loss
 
 def ordinal_loss(margin=0,alpha=0):
-    
+
     def loss(y_true,y_pred, margin=margin,alpha=alpha):
-        from keras import backend as K
+        from tensorflow.python.keras import backend as K
         diff = y_pred[:, 1:] - y_pred[:, :-1]
         penalty = K.mean(K.maximum(0.0, margin - diff)) * alpha
         return penalty
@@ -169,7 +169,7 @@ def lda_loss(n_components, margin=0,method='raleigh_coeff'):
             r = 1e-3
             cho = tf.cholesky(St_t + tf.eye(dim) * r)
             inv_cho = tf.matrix_inverse(cho)
-            evals_t = tf.linalg.eigvalsh(tf.transpose(inv_cho) * Sb_t * inv_cho)  # Sb_t, St_t # SIMPLIFICATION OF THE EQP USING cholesky    
+            evals_t = tf.linalg.eigvalsh(tf.transpose(inv_cho) * Sb_t * inv_cho)  # Sb_t, St_t # SIMPLIFICATION OF THE EQP USING cholesky
             top_k_evals = evals_t[-n_components:]
 
             index_min = tf.argmin(top_k_evals, 0)
@@ -177,16 +177,16 @@ def lda_loss(n_components, margin=0,method='raleigh_coeff'):
             mask_min = top_k_evals < thresh_min
             cost_min = tf.boolean_mask(top_k_evals, mask_min)
             cost -tf.reduce_mean(cost_min)
-            return 
+            return
         elif method == 'trace':
             # maximize the trace(Sw^-1 * Sb)
             cost = -tf.linalg.trace(tf.matrix_inv(Sw_t)*Sb_t)
-            
+
         elif method == 'det_ratio':
             # maximze the ratio of det of between/ within scatter
             cost = -tf.math.divide(tf.linalg.det(Sb_t),tf.linalg.det(Sw_t))
-        
-        
+
+
         elif method == 'trace_ratio':
             # minimize the -ve of ratio of trace of betwwen to witin scatter
             cost = -tf.math.divide(tf.linalg.trace(Sb_t),tf.linalg.trace(Sw_t))
