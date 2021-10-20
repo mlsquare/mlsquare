@@ -135,9 +135,8 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-
-html_logo = 'logo.png'
-html_favison = 'favicon.png'
+html_logo = '_static/logo.png'
+html_favicon = '_static/favicon.png'
 
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
