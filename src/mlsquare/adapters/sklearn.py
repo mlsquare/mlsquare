@@ -225,7 +225,7 @@ class IrtKerasRegressor():
         if filename == None:
             raise ValueError(
                 'Name Error: to save the model you need to specify the filename')
-        pickle.dump(self.model, open(filename + '.pkl', 'wb'))
+        # pickle.dump(self.model, open(filename + '.pkl', 'wb'))
 
         self.model.save(filename + '.h5')
 
@@ -402,7 +402,7 @@ class SklearnKerasClassifier():
             raise ValueError(
                 'Name Error: to save the model you need to specify the filename')
 
-        pickle.dump(self.final_model, open(filename + '.pkl', 'wb'))
+        pickle.dump(self.primal_model, open(filename + '.pkl', 'wb'))
 
         self.final_model.save(filename + '.h5')
 
@@ -532,7 +532,7 @@ class SklearnKerasRegressor():
         if filename == None:
             raise ValueError(
                 'Name Error: to save the model you need to specify the filename')
-        pickle.dump(self.final_model, open(filename + '.pkl', 'wb'))
+        pickle.dump(self.primal_model, open(filename + '.pkl', 'wb'))
 
         self.final_model.save(filename + '.h5')
 
