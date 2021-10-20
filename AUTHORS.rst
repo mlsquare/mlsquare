@@ -1,6 +1,7 @@
 ============
 Contributors
 ============
-* Soma S. Dhavala <soma@mlsquare.org>
-* Shakkeel Ahmed <shakkeel@mlsquare.org>
-* Ravi S. Mula <ravi@mlsquare.org>
+* Soma S. Dhavala
+* Shakkeel Ahmed
+* Ravi S. Mula
+* Prakash Bisht
